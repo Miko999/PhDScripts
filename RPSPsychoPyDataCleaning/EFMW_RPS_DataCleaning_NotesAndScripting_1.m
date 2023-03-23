@@ -45,6 +45,75 @@
 % RPS_PsychoPyTaskInfo (will be RAD instead of RPS for RAD data)
 % RPS_PsychoPyTaskInfo will be made externally
 
+%% Clear all and Load in Data
+
+                            % EVENTUALLY THIS NEEDS TO LOOP THROUGH SEVERAL
+                            % DATA FILES
+
+clc
+clear
+% Setting the directory to what it is on the work laptop
+maindir = ('C:/Users/chels/OneDrive - University of Calgary/1_PhD_Project/Scripting/RPSPsychoPyDataCleaning/');
+rawdatadir = [maindir 'RawData/'];
+cleaneddatadir = [maindir 'CleanedData/'];
+addpath(genpath(maindir))
+
+
+% need to get it to find all raw files or the raw files of interest too
+filepattern = fullfile(rawdatadir, 'PARTICIPANT_EFMW_Tasks_RPS_*');
+% finds all file with the string in the beginning of the file name
+filename = dir(filepattern); 
+% creates an array with file names X x 1 (X = number of files with matching
+% names
+filecell = struct2cell(filename);
+% convert to cell array
+filematrix = cell2mat(filecell(1,1));
+% extract only the file name of the first file
+
+            % LATER TO GET THE FILE NAMES ONE AT A TIME, NEED TO CHANGE THE
+            % COLUMN VALUE.
+            % EACH FILENAME IS PART OF A SEPARATE COLUMN
+            % THIS COULD BE A GOOD POINT FOR LOOPING
+
+filenamestring = mat2str(filematrix); 
+% change filename to string
+filenamestring = strrep(filenamestring,'''','');
+%remove extra ' characters
+
+% load in data file
+
+% trying
+% opts = detectImportOptions([rawdatadir 'ExampleRPSPsychoPyData_WithMCTErrors.csv']);
+% preview([rawdatadir 'ExampleRPSPsychoPyData_WithMCTErrors.csv'],opts)
+% mostly importing columns as character and double
+
+% test = readmatrix([rawdatadir 'ExampleRPSPsychoPyData_WithMCTErrors.csv']);
+% read matrix doesn't work because it puts everything as a double.
+
+% [~,~,raw] = readmatrix([rawdatadir 'ExampleRPSPsychoPyData_WithMCTErrors.csv']);
+% doesn't like the number of output arguments here
+
+            % fprintf('\n******\nLoading in raw data file %d\n******\n\n', (whatever the looping variable is called);
+
+opts = detectImportOptions([rawdatadir filenamestring]);
+opts.VariableNamingRule = 'preserve'; % need to set to preserve or it changes variable names ot match matlab syntax
+rawdata = readtable([rawdatadir filenamestring],opts);
+% creates a table where all variables are 'cell'
+
+% T2 = convertvars(T1,vars,dataType) converts the specified variables to the specified data type. The input argument T1 can be a table or timetable.
+% doesn't do cell to double
+
+            % LATER USE str2double INSTEAD TO GET NUMBERS
+            % string() CONVERTS CELL TO STRING; CELL WORDS FINE FOR e.g.,
+            % strcmp THOUGH.
+
+            % cell2mat TO DO STUFF WITH NUMERIC VARIABLES
+
+            % REMEMBER TO CLEAR EXTRA VARIABLES
+
+% store column names
+rawdatavars = rawdata.Properties.VariableNames;
+
 %% Constant Data Columns
 % Participant ID (informed by researcher)
 % date
@@ -56,6 +125,52 @@
 % psychopyVersion, OS, and frameRate can stay the same
 
 % Could remake date so that it isn't in YYYY-MM-DD-HHhMM.SS.MsMsMs
+
+%% Create indexes for constant data columns
+
+ID = unique(rawdata.("Participant ID (informed by researcher)"));
+Date = unique(rawdata.("date"));
+expName = unique(rawdata.("expName"));
+psychopyversion = unique(rawdata.("psychopyVersion"));
+OS = unique(rawdata.("OS"));
+frameRate = unique(rawdata.("frameRate"));
+
+frameRate = num2cell(frameRate);
+
+%% Creating Vector for adding to RPS_PsychoPyTaskInfo
+
+TaskInfo = [ID Date expName psychopyversion OS frameRate];
+
+%% write task info to csv
+
+%dlmwrite([maindir "RPS_PsychoPyTaskInfo.csv"], cell2mat(TaskInfo), 'delimiter', ',','append');
+% doesn't work since data isn't all of the same type
+
+% writecell(TaskInfo, [maindir "RPS_PsychoPyTaskInfo.csv"])
+% did not append
+% will have to load in, add the data, then re-write the file
+
+opts = detectImportOptions([maindir 'RPS_PsychoPyTaskInfo.csv']);
+opts.VariableNamingRule = 'preserve'; % need to set to preserve or it changes variable names ot match matlab syntax
+TaskInfo = readtable([maindir 'RPS_PsychoPyTaskInfo.csv'],opts);
+
+% next look up how to add the cell array to the bottom of this table then
+% resave the table
+
+%% Define Column Indexes and Subject IDs?
+
+            % find(strcmp(data, 'exact string of interest))) TO FIND ROWS
+            % WITH SPECIFIC STRING VALUES
+
+            % rawdata.Properties.VariableNames TO GET VARIABLE NAMES FOR
+            % EACH COLUMN
+
+            % T2 = renamevars(T1,vars,newNames) renames the table or timetable 
+            % variables specified by vars using the names specified by newNames.
+
+% could rename columns or just create column index variables
+
+
 
 %% Randomizer Columns (to remove after creating task order variable(s))
 % EFtasksrandomizerloop.thisRepN, EFtasksrandomizerloop.thisTrialN, EFtasksrandomizerloop.thisIndex
