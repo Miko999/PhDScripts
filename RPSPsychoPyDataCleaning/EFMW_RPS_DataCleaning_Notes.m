@@ -1,9 +1,8 @@
 %% Executive Functioning and Mind Wandering (RPS) Study - Data Cleaning Code
-% Draft 1
 
 % Chelsie H.
 % Started: November 8, 2022
-
+% Last updated: February 16, 2023
 
 % Purpose: Remove Irrelevant Data for Later Scoring
 
@@ -11,14 +10,48 @@
 % remove columns from "practice" parts - create a separate file for this?
 % remove any rows that only have practice data
 % remove columns for randomizer variables
-% Create a separate file for just practice stuff?
+% create a separate file for just practice stuff
+% create a separate file to store task/system information for all
+% participants
 % create script for checking if psychopy scoring is correct
 
-%% Columns:
+% Example file for raw data: ExampleRPSPsychoPyData.cxv
+% Example file for what cleaned data should look like: ExampleRPSGoalCleanedData.xlsx
+% separate sheets for each part of the data.
+% File with column key and content information is
+% PsychoPyData_ColumnKey.xlsx
+
+% THIS SCRIPT IS NOT FOR REMOVING TRIALS WHERE THERE WERE ISSUES DURING
+% DATA COLLECTION OR DUMMY TRIALS
+
+% Note that because the data is being created through a python program,
+% automatic counters will always start at '0' for the first item.
+% 1 will have to be added to all counters to make this more intuitive in
+% cleaned data.
+
+%% Notes
+% could separate data into different matrices, then look for the first
+% indicator of a trial and delete all blank before it, then look for the
+% last trial and delete everything after, just to conserve any trials where
+% they did not response and no data was recorded.
+
+%% Output Files
+% ParticipantID_psychopy_cleaned (for cleaned data of tasks only)
+% ParticipantID_psychopy_practice
+% RPS_PsychoPyTaskInfo (will be RAD instead of RPS for RAD data)
+
+%% Constant Data Columns
 % Participant ID (informed by researcher)
 % date
 % expName
-% psychopyVersion , OS , and frameRate may not be needed.
+% psychopyVersion , OS , and frameRate
+
+% all will be copied to a new row of the RPS_PsychoPyTaskInfo file.
+% columns renamed to: ID, date(YYYY-MM-DD_HHhMM.SS.MsMsMs), experiment
+% psychpyVersion, OS, and frameRate can stay the same
+
+% Could remake date so that it isn't in YYYY-MM-DD-HHhMM.SS.MsMsMs
+
 %% Randomizer Columns (to remove after creating task order variable(s))
 % EFtasksrandomizerloop.thisRepN, EFtasksrandomizerloop.thisTrialN, EFtasksrandomizerloop.thisIndex
 % EFtasksrandomizerloop.ran, EFTask1, EFTask2, EFTask3, EFTask4,
@@ -41,11 +74,12 @@
 % the task each row refers to.
 
 % EFtasksrandomizerloop.thisIndex = 0 = EFTask3 = SymmSpan = SY
-% "" = EFTask1 = Switch = SW
+% (same as above)"" = EFTask1 = Switch = SW
 % "" = EFTask2 = Nback = N
 % "" = EFTask4 = SART = SA
 
-%% Separate variable for task and subtask order
+% can add this to the file with system information etc.
+
 %% and Variable for which subtask was first
 % May include subtasks
 % Colour Shape Subtasks:
@@ -251,6 +285,7 @@
 %% MCT Instructions
 %  onoff_resp_instructions_2.keys	onoff_resp_instructions_2.rt, aware_resp_instructions_2.keys,
 % aware_resp_instructions_2.rt, intent_response_instructions_2.keys, intent_response_instructions_2.rt
+% (responding to probe questions in instructions)
 %% MCT Practice
 % tone_practicetrial_resp.keys (key pressed)
 % tone_practicetrial_resp.rt, and practiceloop.thisN (time of key press relative to the start of the trial)
@@ -276,6 +311,7 @@
 %       []    []  300 0 300 0 1   []    []  ...
 % will need to find an efficient way of combineing these rows.
 %% MCT "Scoring"
+% tone_number (tome number from 1 to 25 max).
 % probe_resp.keys (key pressed for probe intro screen)
 % probe_resp.rt (time responded to probe intro screen relative to trial start)
 % onoff_resp.keys (key pressed for on off question)
@@ -285,10 +321,8 @@
 % intent_response.keys (key pressed for intention question)
 % intent_response.rt (time responded to intention question relative to trial start)
 % probeloop1.thisRepN, probeloop1.thisTrialN, probeloop1.thisN, 
-% probeloop1.thisIndex, probeloop1.ran
+% probeloop1.thisIndex, probeloop1.ran (all dummies)
 % one of the probe loop numbers should be probe number starting at 0
 % however current example data only has one probe
 %% MCT Excess
 % MCTBeatResponse (doesn't actually store anything),
-
-% 
