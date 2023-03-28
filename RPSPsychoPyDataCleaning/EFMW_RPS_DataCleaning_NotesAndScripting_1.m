@@ -2,7 +2,7 @@
 
 % Chelsie H.
 % Started: November 8, 2022
-% Last updated: March 23, 2023
+% Last updated: March 28, 2023
 
 % Purpose: Remove Irrelevant Data for Later Scoring
 
@@ -112,7 +112,7 @@ rawdata = readtable([rawdatadir filenamestring],opts);
             % REMEMBER TO CLEAR EXTRA VARIABLES
 
 % store column names
-rawdatavars = rawdata.Properties.VariableNames;
+% rawdatavars = rawdata.Properties.VariableNames;
 
 %% Constant Data Columns
 % Participant ID (informed by researcher)
@@ -128,6 +128,8 @@ rawdatavars = rawdata.Properties.VariableNames;
 
 %% Create indexes for constant data columns
 
+% or just take the unique values
+
 ID = unique(rawdata.("Participant ID (informed by researcher)"));
 Date = unique(rawdata.("date"));
 expName = unique(rawdata.("expName"));
@@ -139,7 +141,7 @@ frameRate = num2cell(frameRate);
 
 %% Creating Vector for adding to RPS_PsychoPyTaskInfo
 
-TaskInfo = [ID Date expName psychopyversion OS frameRate];
+%NewTaskInfo = [ID Date expName psychopyversion OS frameRate];
 
 %% write task info to csv
 
@@ -157,6 +159,17 @@ TaskInfo = readtable([maindir 'RPS_PsychoPyTaskInfo.csv'],opts);
 % next look up how to add the cell array to the bottom of this table then
 % resave the table
 
+% could make cell array into a table
+
+% NewTaskInfo = cell2table(NewTaskInfo);
+
+% combine into one table
+% NEEDS SAME NUMBER OF VARIABLES FIRST
+% TaskInfo = [TaskInfo; NewTaskInfo];
+
+% write to file
+% writetable(TaskInfo, [maindir 'RPS_PsychoPyTaskInfo.csv']);
+
 %% Define Column Indexes and Subject IDs?
 
             % find(strcmp(data, 'exact string of interest))) TO FIND ROWS
@@ -169,8 +182,6 @@ TaskInfo = readtable([maindir 'RPS_PsychoPyTaskInfo.csv'],opts);
             % variables specified by vars using the names specified by newNames.
 
 % could rename columns or just create column index variables
-
-
 
 %% Randomizer Columns (to remove after creating task order variable(s))
 % EFtasksrandomizerloop.thisRepN, EFtasksrandomizerloop.thisTrialN, EFtasksrandomizerloop.thisIndex
@@ -194,9 +205,9 @@ TaskInfo = readtable([maindir 'RPS_PsychoPyTaskInfo.csv'],opts);
 % the task each row refers to.
 
 % EFtasksrandomizerloop.thisIndex = 0 = EFTask3 = SymmSpan = SY
-% (same as above)"" = EFTask1 = Switch = SW
-% "" = EFTask2 = Nback = N
-% "" = EFTask4 = SART = SA
+% (same as above)"" = 1 = EFTask1 = Switch = SW
+% "" = 2 = EFTask2 = Nback = N
+% "" = 3 = EFTask4 = SART = SA
 
 % can add this to the file with system information etc.
 
@@ -215,6 +226,89 @@ TaskInfo = readtable([maindir 'RPS_PsychoPyTaskInfo.csv'],opts);
 % then task and subtask order variable = SWc...
 % concatonate things into a variable name e.g., NSWcsSYsrSAN
 
+%% To get task order
+% Create TaskOrder variable to hold letters
+TaskOrder = [];
+    % find EFtasksrandomizerloop.thisN
+TaskRandCol = find(strcmp(rawdata.Properties.VariableNames,"EFtasksrandomizerloop.thisN"));
+% for 'PARTICIPANT_EFMW_Tasks_RPS_ExampleFewErrors.csv' this should be 32
+for TaskRandIdx = 0:3
+    % for every value of this which should be 0 to 3
+    % testing when this = 0
+        % had trouble getting find/ismember working for this
+        TaskRandRow = find(ismember(rawdata.("EFtasksrandomizerloop.thisN"),string(TaskRandIdx)));
+        % for the example, this should be 416
+ 
+    % take that row number and find the value for EFtasksrandomizerloop.thisIndex
+        TaskRandIdxNum = rawdata.("EFtasksrandomizerloop.thisIndex")(TaskRandRow);
+        % creates a 1 x 1 cell with the value (3, in the example)
+        % TaskRandIdxNum = cell2mat(TaskRandIdxNum(1));
+        % but this makes it a character
+        TaskRandIdxNum = str2num(cell2mat(TaskRandIdxNum(1)));
+        % now this makes it a double but with just the single number
+
+    % if that value is 0
+    if TaskRandIdxNum == 0
+        % add SY to TaskOrder; TaskOrder = [TaskOrder 'SY']
+        TaskOrder = [TaskOrder 'SY'];        % remember to use single quotes
+        % find symmspansubtasksloop.thisN
+        % SubTaskRandCol = find(strcmp(rawdata.Properties.VariableNames,"symmspansubtasksloop.thisN"));
+            % find row where this is 0
+        SymmSubTaskRandRow = find(ismember(rawdata.("symmspansubtasksloop.thisN"),'0'));
+        SymmSubTaskRandIdxNum = rawdata.("symmspansubtasksloop.thisIndex")(SymmSubTaskRandRow);
+        SymmSubTaskRandIdxNum = str2num(cell2mat(SymmSubTaskRandIdxNum(1)));
+            % for that row
+            % if symmspansubtasksloop.thisIndex = 0
+            if SymmSubTaskRandIdxNum == 0
+                % add 'sr' to task order
+                TaskOrder = [TaskOrder 'sr'];
+            % else if symmspansubtasksloop.thisIndex = 1
+            elseif SymmSubTaskRandIdxNum == 1
+                % add 'rs' to task order
+                TaskOrder = [TaskOrder 'rs'];
+            end
+    % else if the value for the task randomizer index is 1
+    elseif TaskRandIdxNum == 1
+        % add SW to task order variable
+        TaskOrder = [TaskOrder 'SW'];
+        % find counterbalance_switch_shapecolour.thisN
+        % find row where this is 0
+        SwitchSubTaskRandRow = find(ismember(rawdata.("counterbalance_switch_shapecolour.thisN"),'0'));
+        SwitchSubTaskRandIdxNum = rawdata.("counterbalance_switch_shapecolour.thisIndex")(SwitchSubTaskRandRow);
+        SwitchSubTaskRandIdxNum = str2num(cell2mat(SwitchSubTaskRandIdxNum(1)));
+        % for that row
+        % if counterbalance_switch_shapecolour.thisIndex = 0
+        if SwitchSubTaskRandIdxNum == 0
+                % add 'cs' to task order
+                TaskOrder = [TaskOrder 'cs'];
+            % else if counterbalance_switch_shapecolour.thisIndex = 1
+        elseif SwitchSubTaskRandIdxNum == 1
+                % add 'sc' to task order
+                TaskOrder = [TaskOrder 'sc'];
+        end
+    % else if value for task randomizer index is 2
+    elseif TaskRandIdxNum == 2
+        % add N to task order
+        TaskOrder = [TaskOrder 'N'];
+    % else if value for task randomizer index is 3
+    elseif TaskRandIdxNum == 3
+        % add SA to task order
+        TaskOrder = [TaskOrder 'SA'];
+    end
+end    
+% with test where TaskRandIdx = 0; the output TaskOrder should just be 'SA'
+% for full run with 'PARTICIPANT_EFMW_Tasks_RPS_ExampleFewErrors.csv' the
+% TaskOrder should be SASWscSYsrN
+
+%% Now add this to the task info
+NewTaskInfo = [ID Date expName psychopyversion OS frameRate TaskOrder];
+% combine into one table
+TaskInfo = [TaskInfo; NewTaskInfo];
+% write to file
+writetable(TaskInfo, [maindir 'RPS_PsychoPyTaskInfo.csv']);
+
+            % REMEMBER TO CLEAR EXTRA VARIABLES LATER
+            
 %% SART Practice:
 % SARTkey_resp_practice.keys, SARTkey_resp_practice.corr,
 % SARTpracticeloop.thisRepN, SARTpracticeloop.thisTrialN,
