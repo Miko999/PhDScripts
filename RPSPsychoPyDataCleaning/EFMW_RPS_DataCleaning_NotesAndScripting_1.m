@@ -308,11 +308,32 @@ TaskInfo = [TaskInfo; NewTaskInfo];
 writetable(TaskInfo, [maindir 'RPS_PsychoPyTaskInfo.csv']);
 
             % REMEMBER TO CLEAR EXTRA VARIABLES LATER
+
+%% Create a new table for practice data
+    % except we can't just do this because some columns have a mix of
+    % information from the practice and actual tasks
+
+%% Create separate tables for tasks
+
+% cannot just concatinate with rawdata.variables
+% create an index?
+
+%T(:,ismember(T.Properties.VariableNames, {""list of variables""})) this
+% doesn't work with wild cards
+
+SARTMatch = ~cellfun('isempty', regexp(rawdata.Properties.VariableNames, 'SART'));
+SARTAllData = rawdata(:,rawdata.Properties.VariableNames(SARTMatch));
+% doesn't get us the extra column for number
+
+SARTAllData.("number") = rawdata.("number");
+SARTAllData.("correctkey") = rawdata.("correctkey");
+% adds the extra column to the end.
             
 %% SART Practice:
 % SARTkey_resp_practice.keys, SARTkey_resp_practice.corr,
 % SARTpracticeloop.thisRepN, SARTpracticeloop.thisTrialN,
 % SARTpracticeloop.thisN, SARTpracticeloop.thisIndex, SARTpracticeloop.ran
+
 %% SART Stimuli:
 % number (this includes the practice numbers. refer to the SARTpracticeloop columns
 % to find when both contain something...
@@ -328,6 +349,79 @@ writetable(TaskInfo, [maindir 'RPS_PsychoPyTaskInfo.csv']);
 %% SART Excess:
 % SARTloop.thisRepN, SARTloop.thisTrialN, SARTloop.thisN,
 % SARTloop.thisIndex, SARTloop.ran,
+
+%% Separating practice from task for SART
+
+% for the practice columns, there is data only during the practice while
+% the rest is NaN
+% so if I select only those rows where the practice section is not NaN I
+% can keep just the rows that matter from the 'numbers' column
+
+SARTPRows = ~isnan(SARTAllData.("SARTpracticeloop.ran"));
+SARTPData = SARTAllData(SARTPRows,:);
+% but this leaves us with extra columns.
+SARTPNum = SARTPData.("number");
+SARTPCKey = SARTPData.("correctkey");
+
+SARTPMatch = ~cellfun('isempty', regexp(SARTPData.Properties.VariableNames, 'practice'));
+% using 'practice' won't work in some of the other tasks.
+
+        % FUTURE VERSIONS OF THE TASKS NEED STANDARDIZED VARIABLE NAMING TO
+        % MAKE THIS SEPARATION EASIER
+        % OTHER VARIABLES SHOULD ALSO INCLUDE THE TASK LABEL AND BE
+        % SEPARATED FOR PRACTICE AND ACTUAL TASKS
+
+SARTPData = SARTPData(:,SARTPMatch);
+SARTPData.("number") = SARTPNum;
+SARTPData.("correctkey") = SARTPCKey;
+
+% can use ~ to get the task data only.
+SARTData = SARTAllData(~SARTPRows,~SARTPMatch);
+
+SARTLoopCol = ~cellfun('isempty',regexp(SARTData.Properties.VariableNames,'SARTloop'));
+SARTRows = ~isnan(SARTData.("SARTblock1loop.ran"));
+% Don't need SARTloop columns either
+
+SARTData = SARTData(SARTRows,~SARTLoopCol);
+
+
+            % DON'T FORGET TO CLEAR UNNEEDED VARIABLES LATER
+
+%% Remove more extra columns for SART
+SARTPData = SARTPData(:,~ismember(SARTPData.Properties.VariableNames, ["SARTpracticeloop.thisRepN", ...
+    "SARTpracticeloop.thisTrialN", "SARTpracticeloop.thisIndex", "SARTpracticeloop.ran"]));
+
+SARTData = SARTData(:,~ismember(SARTData.Properties.VariableNames,["SARTblock1loop.thisRepN", ...
+    "SARTblock1loop.thisTrialN","SARTblock1loop.thisIndex","SARTblock1loop.ran"]));
+
+%% Add 1 to counters for SART
+SARTPData.("SARTpracticeloop.thisN") = SARTPData.("SARTpracticeloop.thisN") + 1;
+
+SARTData.("SARTblock1loop.thisN") = SARTData.("SARTblock1loop.thisN") + 1;
+
+%% Rename SART columns
+SARTPData = renamevars(SARTPData,["SARTkey_resp_practice.keys", ...
+    "SARTkey_resp_practice.corr", "SARTkey_resp_practice.rt",  ...
+    "SARTpracticeloop.thisN","number","correctkey"], ...
+    ["SARTPResp","SARTPAcc","SARTPRT","SARTPTrial","SARTPStim","SARTPCResp"]);
+
+SARTData = renamevars(SARTData,["SARTkey_resp_trials.keys","SARTkey_resp_trials.corr", ...
+    "SARTkey_resp_trials.rt","SARTblock1loop.thisN","number","correctkey"], ...
+    ["SARTResp","SARTAcc","SARTRT","SARTTrial","SARTStim","SARTCResp"]);
+
+        % BEFORE ANALYZING THE DATA, REMEMBER TO CHECK WHETHER THE COLUMN FOR
+        % ACCURACY IS CORRECT
+
+        % DON'T FORGET TO CLEAR UNNEEDED VARIABLES LATER
+
+
+% For now, this puts the SART practice and SART data of use into separate
+% tables with new labels and counters set to start at 1.
+
+% eventually need to see if the practice and actual data can be put into
+% one file somehow
+% they'll probably have a different number of rows though
+% so maybe they'll need to be saved into separate files per task
 
 %% Switch Practice:
 % Shape Only
