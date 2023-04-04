@@ -109,7 +109,7 @@ rawdata = readtable([rawdatadir filenamestring],opts);
 
             % cell2mat TO DO STUFF WITH NUMERIC VARIABLES
 
-            % REMEMBER TO CLEAR EXTRA VARIABLES
+clear filename filenamestring opts
 
 % store column names
 % rawdatavars = rawdata.Properties.VariableNames;
@@ -155,6 +155,8 @@ frameRate = num2cell(frameRate);
 opts = detectImportOptions([maindir 'RPS_PsychoPyTaskInfo.csv']);
 opts.VariableNamingRule = 'preserve'; % need to set to preserve or it changes variable names ot match matlab syntax
 TaskInfo = readtable([maindir 'RPS_PsychoPyTaskInfo.csv'],opts);
+
+clear opts
 
 % next look up how to add the cell array to the bottom of this table then
 % resave the table
@@ -307,13 +309,20 @@ TaskInfo = [TaskInfo; NewTaskInfo];
 % write to file
 writetable(TaskInfo, [maindir 'RPS_PsychoPyTaskInfo.csv']);
 
-            % REMEMBER TO CLEAR EXTRA VARIABLES LATER
+        % COULD COMBINE ALL NEW TASK INFO BEFORE WRITING IT TO CSV TO
+        % REDUCE READING AND WRITING STEPS
+
+clear TaskRandCol TaskRandIdx TaskRandIdxNum TaskRandRow SymmSubTaskRandRow 
+clear SymmSubTaskRandIdxNum SwitchSubTaskRandRow SwitchSubTaskRandIdxNum
+clear psychopyversion OS frameRate TaskOrder NewTaskInfo TaskInfo
+
+        % WILL NEED ID DATE EXPNAME FOR NAMING THE OUTPUT FILES
 
 %% Create a new table for practice data
     % except we can't just do this because some columns have a mix of
     % information from the practice and actual tasks
 
-%% Create separate tables for tasks
+%% Create separate tables for tasks SART
 
 % cannot just concatinate with rawdata.variables
 % create an index?
@@ -412,16 +421,17 @@ SARTData = renamevars(SARTData,["SARTkey_resp_trials.keys","SARTkey_resp_trials.
         % BEFORE ANALYZING THE DATA, REMEMBER TO CHECK WHETHER THE COLUMN FOR
         % ACCURACY IS CORRECT
 
-        % DON'T FORGET TO CLEAR UNNEEDED VARIABLES LATER
+clear SARTMatch SARTPRows SARTPNum SARTPCKey SARTPMatch SARTLoopCol
+clear SARTRows
 
 
 % For now, this puts the SART practice and SART data of use into separate
 % tables with new labels and counters set to start at 1.
 
-% eventually need to see if the practice and actual data can be put into
-% one file somehow
-% they'll probably have a different number of rows though
-% so maybe they'll need to be saved into separate files per task
+                    % eventually need to see if the practice and actual data can be put into
+                    % one file somehow
+                    % they'll probably have a different number of rows though
+                    % so maybe they'll need to be saved into separate files per task
 
 %% Switch Practice:
 % Shape Only
@@ -485,6 +495,228 @@ SARTData = renamevars(SARTData,["SARTkey_resp_trials.keys","SARTkey_resp_trials.
 % colour_shape_switch_task.thisRepN, colour_shape_switch_task.thisTrialN, 
 % colour_shape_switch_task.thisN, colour_shape_switch_task.thisIndex,
 % colour_shape_switch_task.ran,
+
+%% Create separate tables for Switch
+
+% all switch columns have one of: shape, colour, switch, mixed, stimulus
+% unique columns otherwise: images, dummycorrectresponse, correctresponse
+% other columns with 'correctresponse' are used in other tasks
+
+% doing all of shape, colour, mixed, stimulus, and switch would mean
+% including much overlap
+
+% to get minimal overlap but get all columns, could do: shape, colour, mixed,
+% practiceswitch...
+
+ShapeMatch = ~cellfun('isempty', regexp(rawdata.Properties.VariableNames, 'shape'));
+ShapeData = rawdata(:,rawdata.Properties.VariableNames(ShapeMatch));
+
+ColourMatch = ~cellfun('isempty', regexp(rawdata.Properties.VariableNames, 'colour'));
+ColourData = rawdata(:,rawdata.Properties.VariableNames(ColourMatch));
+
+MixedMatch = ~cellfun('isempty', regexp(rawdata.Properties.VariableNames, 'mix'));
+MixedData = rawdata(:,rawdata.Properties.VariableNames(MixedMatch));
+
+PracticeSwitchMatch = ~cellfun('isempty', regexp(rawdata.Properties.VariableNames, 'practiceswitch'));
+PracticeSwitchData = rawdata(:,rawdata.Properties.VariableNames(PracticeSwitchMatch));
+
+%then add switchcond, dummyswitchcondition, switchcondition,
+%dummystimuluspresented, stimuluscondition, dummystimuluscondition, 
+% stimuluspresented, images, correct - separately
+
+% some of these can grouped maybe to reduce single calls?
+SwitchCondMatch = ~cellfun('isempty', regexp(rawdata.Properties.VariableNames, 'switchcond'));
+SwitchCondData = rawdata(:,rawdata.Properties.VariableNames(SwitchCondMatch));
+
+% but 'colour_shape_switch_task...' columns will overlap
+
+% combine data
+% error because duplicate table variable name
+
+OverLapMatch = ~cellfun('isempty', regexp(ShapeData.Properties.VariableNames, 'colour'));
+ShapeData = ShapeData(:,ShapeData.Properties.VariableNames(~OverLapMatch));
+OverLapMatch2 = ~cellfun('isempty', regexp(SwitchCondData.Properties.VariableNames, 'practiceswitch'));
+SwitchCondData = SwitchCondData(:,SwitchCondData.Properties.VariableNames(~OverLapMatch2));
+
+% duplicate dummypracticeswitchcondition
+
+SwitchAllData = [ShapeData ColourData MixedData PracticeSwitchData SwitchCondData];
+
+% add extra columns
+SwitchAllData.("dummystimuluspresented") = rawdata.("dummystimuluspresented");
+SwitchAllData.("stimuluscondition") = rawdata.("stimuluscondition");
+SwitchAllData.("dummystimuluscondition") = rawdata.("dummystimuluscondition");
+SwitchAllData.("stimuluspresented") = rawdata.("stimuluspresented");
+SwitchAllData.("images") = rawdata.("images");
+SwitchAllData.("correct") = rawdata.("correct");
+
+% missed some
+SwitchAllData.("correctresponse") = rawdata.("correctresponse");
+SwitchAllData.("dummycorrectresponse") = rawdata.("dummycorrectresponse");
+
+clear ShapeMatch ShapeData ColourMatch ColourData PracticeSwitchmatch PracticeSwitchData
+clear SwitchCondMatch SwitchCondData OverLapMatch OverLapMatch2
+clear MixedMatch MixedData PracticeSwitchMatch PracticeSwitchData
+%% Separating practice from task for Switch
+
+% for the practice columns, there is data only during the practice while
+% the rest is NaN
+% so if I select only those rows where the practice section is not NaN I
+% can keep just the rows that matter from the 'numbers' column
+
+% but colour, shape, and switch (mixed) have separate practice sections
+% so...
+
+%isnan doesn't work here because the empty parts aren't NAN for some
+%reason.
+
+SwitchPMatch1 = ~cellfun('isempty', regexp(SwitchAllData.Properties.VariableNames, 'practice'));
+SwitchPMatch2 = ~cellfun('isempty', regexp(SwitchAllData.Properties.VariableNames, 'pshape'));
+SwitchPMatch3 = ~cellfun('isempty', regexp(SwitchAllData.Properties.VariableNames, 'pcolour'));
+
+SwitchPMatch = SwitchPMatch1 | SwitchPMatch2 | SwitchPMatch3;
+
+clear SwitchPMatch1 SwitchPMatch2 SwitchPMatch3
+
+ShapePRows = ~cellfun('isempty',SwitchAllData.("practiceshapeloop.ran"));
+ColourPRows = ~cellfun('isempty',SwitchAllData.("practicecolourloop.ran"));
+SwitchMixedPRows = ~cellfun('isempty',SwitchAllData.("practicemixedloop.ran"));
+SwitchPRows = ShapePRows | ColourPRows | SwitchMixedPRows;
+
+clear ShapePRows ColourPRows SwitchMixedPRows
+
+SwitchPData = SwitchAllData(SwitchPRows,:);
+
+% all practice columns have 'pshape' 'practice' 'pcolour'
+% then need 'images' and 'correct'
+
+SwitchPImages = SwitchPData.("images");
+SwitchPCorrect = SwitchPData.("correct");
+
+SwitchPData = SwitchPData(:,SwitchPMatch);
+
+SwitchPData.("images") = SwitchPImages;
+SwitchPData.("correct") = SwitchPCorrect;
+
+clear SwitchPRows SwitchPImages SwitchPCorrect
+
+% can use ~ to get the task data only.
+
+
+ShapeRows = ~cellfun('isempty',SwitchAllData.("shapetrialsloop.ran"));
+ColourRows = ~cellfun('isempty',SwitchAllData.("colourtrialsloop.ran"));
+SwitchMixedRows = ~cellfun('isempty',SwitchAllData.("mixedblock1.ran"));
+SwitchRows = ShapeRows | ColourRows | SwitchMixedRows;
+
+clear ShapeRows ColourRows SwitchMixedRows
+
+SwitchData = SwitchAllData(SwitchRows,~SwitchPMatch);
+
+clear SwitchRows SwitchPMatch
+
+% can't use ~SwitchPRows to get switch rows here because there are other
+% empty rows in addition to the practices
+
+%% Remove extra columns from switch data
+% loops are: switch_shapetrials* counterbalance_switch_shapecolour*
+% switch_colourtrials* colour_shape_switch_task*
+
+SwitchLoopCol1 = ~cellfun('isempty',regexp(SwitchData.Properties.VariableNames,'switch_shapetrials'));
+SwitchLoopCol2 = ~cellfun('isempty',regexp(SwitchData.Properties.VariableNames,'counterbalance_switch_shapecolour'));
+SwitchLoopCol3 = ~cellfun('isempty',regexp(SwitchData.Properties.VariableNames, 'switch_colourtrials'));
+SwitchLoopCol4 = ~cellfun('isempty',regexp(SwitchData.Properties.VariableNames, 'colour_shape_switch_task'));
+
+SwitchLoopCol = SwitchLoopCol1 | SwitchLoopCol2 | SwitchLoopCol3 | SwitchLoopCol4;
+
+SwitchData = SwitchData(:,~SwitchLoopCol);
+
+clear SwitchLoopCol*
+
+%% Separate switch dummy and add to the bottom
+           
+                    % DUMMY DATA IS BEING INCLUDED TO DO CHECKS IN CASE THE
+                    % FIRST SWITCH IS IMMEDIATELY AFTER THE DUMMY
+
+% identify dummy columns
+SwitchPDummyCols = ~cellfun('isempty',regexp(SwitchPData.Properties.VariableNames,'dummy'));
+SwitchDummyCols = ~cellfun('isempty',regexp(SwitchData.Properties.VariableNames,'dummy'));
+
+SwitchPDummyData = SwitchData(:,SwitchPDummyCols);
+SwitchDummyData = SwitchData(:,SwitchDummyCols);
+
+SwitchPData = SwitchPData(:,~SwitchPDummyCols);
+SwitchData = SwitchData(:,~SwitchDummyCols);
+
+
+% remove empty rows from dummy
+SwitchPDummyData = rmmissing(SwitchPDummyData);
+SwitchDummyData = rmmissing(SwitchDummyData);
+
+clear SwitchDummyCols SwitchPDummyCols 
+
+
+%% Remove Unnecessary columns from Switch data
+
+SwitchPData = SwitchPData(:,~ismember(SwitchPData.Properties.VariableNames,["practicecolourloop.thisRepN", ...
+   "practicecolourloop.thisTrialN", "practicecolourloop.thisIndex", "practicecolourloop.ran", ...
+   "practiceshapeloop.thisRepN", "practiceshapeloop.thisTrialN", "practiceshapeloop.thisIndex", ...
+   "practiceshapeloop.ran", "practicemixedloop.thisRepN", "practicemixedloop.thisTrialN", ...
+   "practicemixedloop.thisIndex","practicemixedloop.ran"]));
+
+SwitchData = SwitchData(:,~ismember(SwitchData.Properties.VariableNames, ["shapetrialsloop.thisRepN", ...
+    "shapetrialsloop.thisTrialN","shapetrialsloop.thisIndex","shapetrialsloop.ran", ...
+    "colourtrialsloop.thisRepN","colourtrialsloop.thisTrialN","colourtrialsloop.thisIndex", ...
+    "colourtrialsloop.ran","mixedblock1.thisRepN","mixedblock1.thisTrialN", ...
+    "mixedblock1.thisIndex","mixedblock1.ran"]));
+
+%% Rename Switch Columns
+
+% next can rename columns for switch data, than add in corresponding dummy
+% data to a new row piece by piece, so column order will not be a problem
+
+        %CONTINUE FROM SWITCH MIXED PRACTICE
+
+SwitchPData = renamevars(SwitchPData, ["pshape_resp.keys","pshape_resp.corr", ...
+    "pshape_resp.rt", "practiceshapeloop.thisN","images","correct", ...
+    "pcolour_resp.keys","pcolour_resp.corr","pcolour_resp.rt","practicecolourloop.thisTrialN", ...
+    ], ...
+    ["SwitchPShapeResp","SwitchPShapeAcc","SwitchPShapeRT","SwitchPShapeTrial", ...
+    "SwitchPStim","SwitchPCResp","SwitchPColourResp","SwitchPColourAcc","SwitchPColourRT", ...
+    "SwitchPColourTrial",]);
+
+SwitchData = renamevars(SwitchData, ["images", "correct","shapetrialsresp.keys", ...
+    "shapetrialsresp.corr", "shapetrialsresp.rt", "shapetrialsloop.thisN", ...
+    "colourtrialresp.keys", "colourtrialresp.corr", "colourtrialresp.rt", ...
+    "colourtrialsloop.thisN",], ...
+    ["SwitchStim", "SwitchCResp", "SwitchShapeResp","SwitchShapeAcc","SwitchShapeRT", ...
+    "SwitchShapeTrial","SwitchColourResp","SwitchColourAcc","SwitchColourRT", ...
+    "SwitchColourTrial",]);
+
+
+%% Add 1 to counters 
+SARTPData.("SARTpracticeloop.thisN") = SARTPData.("SARTpracticeloop.thisN") + 1;
+
+SARTData.("SARTblock1loop.thisN") = SARTData.("SARTblock1loop.thisN") + 1;
+
+%% Rename columns
+SARTPData = renamevars(SARTPData,["SARTkey_resp_practice.keys", ...
+    "SARTkey_resp_practice.corr", "SARTkey_resp_practice.rt",  ...
+    "SARTpracticeloop.thisN","number","correctkey"], ...
+    ["SARTPResp","SARTPAcc","SARTPRT","SARTPTrial","SARTPStim","SARTPCResp"]);
+
+SARTData = renamevars(SARTData,["SARTkey_resp_trials.keys","SARTkey_resp_trials.corr", ...
+    "SARTkey_resp_trials.rt","SARTblock1loop.thisN","number","correctkey"], ...
+    ["SARTResp","SARTAcc","SARTRT","SARTTrial","SARTStim","SARTCResp"]);
+
+        % BEFORE ANALYZING THE DATA, REMEMBER TO CHECK WHETHER THE COLUMN FOR
+        % ACCURACY IS CORRECT
+
+clear SARTMatch SARTPRows SARTPNum SARTPCKey SARTPMatch SARTLoopCol
+clear SARTRows
+
+
+% For now, this puts the SART practice and SART data of use into separate
+% tables with new labels and counters set to start at 1.
 
 %% Symmetry Span Practice
 % Symm
