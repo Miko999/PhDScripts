@@ -45,7 +45,7 @@
 % RPS_PsychoPyTaskInfo (will be RAD instead of RPS for RAD data)
 % RPS_PsychoPyTaskInfo will be made externally
 
-%% Clear all and Load in Data
+%% Clear all and Select Directory
 
                             % EVENTUALLY THIS NEEDS TO LOOP THROUGH SEVERAL
                             % DATA FILES
@@ -54,6 +54,10 @@ clc
 clear
 % Setting the directory to what it is on the work laptop
 maindir = ('C:/Users/chels/OneDrive - University of Calgary/1_PhD_Project/Scripting/RPSPsychoPyDataCleaning/');
+% on desktop maindir = ('C:/Users/chish/OneDrive - University of Calgary/1_PhD_Project/Scripting/RPSPsychoPyDataCleaning/')
+
+
+%% Load in Data
 rawdatadir = [maindir 'RawData/'];
 cleaneddatadir = [maindir 'CleanedData/'];
 addpath(genpath(maindir))
@@ -632,7 +636,7 @@ SwitchData = SwitchData(:,~SwitchLoopCol);
 
 clear SwitchLoopCol*
 
-%% Separate switch dummy and add to the bottom
+%% Separate switch dummy
            
                     % DUMMY DATA IS BEING INCLUDED TO DO CHECKS IN CASE THE
                     % FIRST SWITCH IS IMMEDIATELY AFTER THE DUMMY
@@ -641,7 +645,7 @@ clear SwitchLoopCol*
 SwitchPDummyCols = ~cellfun('isempty',regexp(SwitchPData.Properties.VariableNames,'dummy'));
 SwitchDummyCols = ~cellfun('isempty',regexp(SwitchData.Properties.VariableNames,'dummy'));
 
-SwitchPDummyData = SwitchData(:,SwitchPDummyCols);
+SwitchPDummyData = SwitchPData(:,SwitchPDummyCols);
 SwitchDummyData = SwitchData(:,SwitchDummyCols);
 
 SwitchPData = SwitchPData(:,~SwitchPDummyCols);
@@ -674,49 +678,80 @@ SwitchData = SwitchData(:,~ismember(SwitchData.Properties.VariableNames, ["shape
 % next can rename columns for switch data, than add in corresponding dummy
 % data to a new row piece by piece, so column order will not be a problem
 
-        %CONTINUE FROM SWITCH MIXED PRACTICE
-
 SwitchPData = renamevars(SwitchPData, ["pshape_resp.keys","pshape_resp.corr", ...
     "pshape_resp.rt", "practiceshapeloop.thisN","images","correct", ...
-    "pcolour_resp.keys","pcolour_resp.corr","pcolour_resp.rt","practicecolourloop.thisTrialN", ...
-    ], ...
+    "pcolour_resp.keys","pcolour_resp.corr","pcolour_resp.rt","practicecolourloop.thisN", ...
+    "practiceswitchstimuluscondition","practiceswitchcondition","practiceswitchstimuluspresented", ...
+    "practiceswitchcorrectresponse","mixpracticeresp.keys","mixpracticeresp.corr","mixpracticeresp.rt", ...
+    "practicemixedloop.thisN"], ...
     ["SwitchPShapeResp","SwitchPShapeAcc","SwitchPShapeRT","SwitchPShapeTrial", ...
-    "SwitchPStim","SwitchPCResp","SwitchPColourResp","SwitchPColourAcc","SwitchPColourRT", ...
-    "SwitchPColourTrial",]);
+    "SwitchPStimSingle","SwitchPCRespSingle","SwitchPColourResp","SwitchPColourAcc","SwitchPColourRT", ...
+    "SwitchPColourTrial","SwitchPRule","SwitchPCond","SwitchPStimMixed","SwitchPCRespMixed","SwitchPResp", ...
+    "SwitchPAcc","SwitchPRT","SwitchPTrial"]);
 
 SwitchData = renamevars(SwitchData, ["images", "correct","shapetrialsresp.keys", ...
     "shapetrialsresp.corr", "shapetrialsresp.rt", "shapetrialsloop.thisN", ...
     "colourtrialresp.keys", "colourtrialresp.corr", "colourtrialresp.rt", ...
-    "colourtrialsloop.thisN",], ...
-    ["SwitchStim", "SwitchCResp", "SwitchShapeResp","SwitchShapeAcc","SwitchShapeRT", ...
+    "colourtrialsloop.thisN","stimuluscondition","switchcondition","stimuluspresented", ...
+    "correctresponse","mixedtrialsresp.keys","mixedtrialsresp.corr","mixedtrialsresp.rt", ...
+    "mixedblock1.thisN"], ...
+    ["SwitchStimSingle", "SwitchCRespSingle", "SwitchShapeResp","SwitchShapeAcc","SwitchShapeRT", ...
     "SwitchShapeTrial","SwitchColourResp","SwitchColourAcc","SwitchColourRT", ...
-    "SwitchColourTrial",]);
+    "SwitchColourTrial","SwitchRule","SwitchCond","SwitchStimMixed","SwitchCRespMixed", ...
+    "SwitchResp","SwitchAcc","SwitchRT","SwitchTrial"]);
 
+                % some duplicate column names previously for the stimuli and correct
+                % responses, may want to combine the single and mixed task
+                % columns for these, just to simplify things.
+                % could also fill in 'condition' and 'rule' to merge single
+                % and mixed tasks but this might be easy to mix up.
 
-%% Add 1 to counters 
-SARTPData.("SARTpracticeloop.thisN") = SARTPData.("SARTpracticeloop.thisN") + 1;
+%% Add 1 to counters for switch
 
-SARTData.("SARTblock1loop.thisN") = SARTData.("SARTblock1loop.thisN") + 1;
+% matlab is treating the columns as cells here, but treated them is doubles
+% for SART.
+SwitchPData.("SwitchPShapeTrial") = str2double(SwitchPData.("SwitchPShapeTrial")) + 1;
+SwitchPData.("SwitchPColourTrial") = str2double(SwitchPData.("SwitchPColourTrial")) + 1;
+SwitchPData.("SwitchPTrial") = str2double(SwitchPData.("SwitchPTrial")) + 2; % plus 2 so dummy is 1
 
-%% Rename columns
-SARTPData = renamevars(SARTPData,["SARTkey_resp_practice.keys", ...
-    "SARTkey_resp_practice.corr", "SARTkey_resp_practice.rt",  ...
-    "SARTpracticeloop.thisN","number","correctkey"], ...
-    ["SARTPResp","SARTPAcc","SARTPRT","SARTPTrial","SARTPStim","SARTPCResp"]);
+SwitchData.("SwitchShapeTrial") = str2double(SwitchData.("SwitchShapeTrial")) + 1;
+SwitchData.("SwitchColourTrial") = str2double(SwitchData.("SwitchColourTrial")) + 1;
+SwitchData.("SwitchTrial") = str2double(SwitchData.("SwitchTrial")) + 2; % plus 2 so dummy is 1
 
-SARTData = renamevars(SARTData,["SARTkey_resp_trials.keys","SARTkey_resp_trials.corr", ...
-    "SARTkey_resp_trials.rt","SARTblock1loop.thisN","number","correctkey"], ...
-    ["SARTResp","SARTAcc","SARTRT","SARTTrial","SARTStim","SARTCResp"]);
+%% Add Dummies to switch data
 
-        % BEFORE ANALYZING THE DATA, REMEMBER TO CHECK WHETHER THE COLUMN FOR
-        % ACCURACY IS CORRECT
+% can't just add an empty thing to the table...
+% assuming the last row is always a mixed/actual switch task trial (which
+% it should always be) can duplicate that into a new table and refill the
+% rows
 
-clear SARTMatch SARTPRows SARTPNum SARTPCKey SARTPMatch SARTLoopCol
-clear SARTRows
+PDummyRow = SwitchPData(nrows(SwitchPData),:);
 
+PDummyRow.("SwitchPRule") = SwitchPDummyData.("dummypracticeswitchstimuluscondition");
+PDummyRow.("SwitchPCond") = SwitchPDummyData.("dummypracticeswitchcondition");
+PDummyRow.("SwitchPStimMixed") = SwitchPDummyData.("dummypracticeswitchstimuluspresented");
+PDummyRow.("SwitchPCRespMixed") = SwitchPDummyData.("dummypracticeswitchcorrectresponse");
+PDummyRow.("SwitchPResp") = SwitchPDummyData.("mixpracticedummyresp.keys");
+PDummyRow.("SwitchPAcc") = SwitchPDummyData.("mixpracticedummyresp.corr");
+PDummyRow.("SwitchPRT") = SwitchPDummyData.("mixpracticedummyresp.rt");
+PDummyRow.("SwitchPTrial") = 1;
 
-% For now, this puts the SART practice and SART data of use into separate
-% tables with new labels and counters set to start at 1.
+SwitchPData = [SwitchPData ; PDummyRow];
+
+DummyRow = SwitchData(nrows(SwitchData),:);
+
+DummyRow.("SwitchRule") = SwitchDummyData.("dummystimuluscondition");
+DummyRow.("SwitchCond") = SwitchDummyData.("dummyswitchcondition");
+DummyRow.("SwitchStimMixed") = SwitchDummyData.("dummystimuluspresented");
+DummyRow.("SwitchCRespMixed") = SwitchDummyData.("dummycorrectresponse");
+DummyRow.("SwitchResp") = SwitchDummyData.("mixeddummyresp.keys");
+DummyRow.("SwitchAcc") = SwitchDummyData.("mixeddummyresp.corr");
+DummyRow.("SwitchRT") = SwitchDummyData.("mixeddummyresp.rt");
+DummyRow.("SwitchTrial") = 1;
+
+SwitchData = [SwitchData; DummyRow];
+
+clear PDummyRow DummyRow SwitchDummyData SwitchPDummyData
 
 %% Symmetry Span Practice
 % Symm
@@ -783,6 +818,233 @@ clear SARTRows
 % Task
 % symmspanendkey.keys, symmspanendkey.rt, symmspantaskloop.thisRepN, symmspantaskloop.thisTrialN, 
 % symmspantaskloop.thisN, symmspantaskloop.thisIndex, symmspantaskloop.ran
+
+%% Create separate tables for SymmSpan
+
+                % REMEMBER THAT OLDER DATA ARE MISSING THE ".time" COLUMNS
+                % having timing also added other columns related to
+                % mousec click
+
+% most symmspan columns have "symm" or "square" in them
+% creates overlap with "symmpracticesquareloop..." columns
+% can also include "practiceresponse" items
+% and "recallloop." items (period is needed to reduce overlap)
+% and requires adding: practicerecallaccuracy, loopnumber, memnumber, recallaccuracy
+
+SymmMatch = ~cellfun('isempty', regexp(rawdata.Properties.VariableNames, 'symm'));
+SymmData = rawdata(:,rawdata.Properties.VariableNames(SymmMatch));
+
+SquareMatch = ~cellfun('isempty', regexp(rawdata.Properties.VariableNames, 'square'));
+SquareData = rawdata(:,rawdata.Properties.VariableNames(SquareMatch));
+
+PRespMatch = ~cellfun('isempty', regexp(rawdata.Properties.VariableNames, 'practiceresponse'));
+PRespData = rawdata(:,rawdata.Properties.VariableNames(PRespMatch));
+
+RecallLoopMatch = ~cellfun('isempty', regexp(rawdata.Properties.VariableNames, 'recallloop.'));
+RecallLoopData = rawdata(:,rawdata.Properties.VariableNames(RecallLoopMatch));
+
+OverLapMatch3 = ~cellfun('isempty', regexp(SquareData.Properties.VariableNames, 'symmpracticesquareloop'));
+SquareData = SquareData(:,SquareData.Properties.VariableNames(~OverLapMatch3));
+
+% combine
+
+SymmSpanAllData = [SymmData SquareData PRespData RecallLoopData];
+
+% add extra columns
+SymmSpanAllData.("practicerecallaccuracy") = rawdata.("practicerecallaccuracy");
+SymmSpanAllData.("loopnumber") = rawdata.("loopnumber");
+SymmSpanAllData.("memnumber") = rawdata.("memnumber");
+SymmSpanAllData.("recallaccuracy") = rawdata.("recallaccuracy");
+
+clear SymmMatch SymmData SquareMatch SquareData PRespMatch PRespData RecallLoopMatch RecallLoopData OverLapMatch3
+
+%% Separating practice from task for SymmSpan
+
+% symmetry, recall, and the full combined task have practice sections.
+
+%% %%%%% START HERE NEXT TIME
+
+SymmPMatch = ~cellfun('isempty', regexp(SymmSpanAllData.Properties.VariableNames, 'practice'));
+RecallPPMatch = ~cellfun('isempty', regexp(SymmSpanAllData.Properties.VariableNames, 'pshape'));
+SymmSpanPMatch = ~cellfun('isempty', regexp(SymmSpanAllData.Properties.VariableNames, 'pcolour'));
+
+SymmSpanPMatch = SymmSpanPMatch1 | SymmSpanPMatch2 | SymmSpanPMatch3;
+
+clear SymmSpanPMatch1 SymmSpanPMatch2 SymmSpanPMatch3
+
+% for the practice columns, there is data only during the practice while
+% the rest is empty cells, so rows can be eliminated this way
+
+ShapePRows = ~cellfun('isempty',SymmSpanAllData.("practiceshapeloop.ran"));
+ColourPRows = ~cellfun('isempty',SymmSpanAllData.("practicecolourloop.ran"));
+SymmSpanMixedPRows = ~cellfun('isempty',SymmSpanAllData.("practicemixedloop.ran"));
+SymmSpanPRows = ShapePRows | ColourPRows | SymmSpanMixedPRows;
+
+clear ShapePRows ColourPRows SymmSpanMixedPRows
+
+SymmSpanPData = SymmSpanAllData(SymmSpanPRows,:);
+
+% all practice columns have 'pshape' 'practice' 'pcolour'
+% then need 'images' and 'correct'
+
+SymmSpanPImages = SymmSpanPData.("images");
+SymmSpanPCorrect = SymmSpanPData.("correct");
+
+SymmSpanPData = SymmSpanPData(:,SymmSpanPMatch);
+
+SymmSpanPData.("images") = SymmSpanPImages;
+SymmSpanPData.("correct") = SymmSpanPCorrect;
+
+clear SymmSpanPRows SymmSpanPImages SymmSpanPCorrect
+
+% can use ~ to get the task data only.
+
+
+ShapeRows = ~cellfun('isempty',SymmSpanAllData.("shapetrialsloop.ran"));
+ColourRows = ~cellfun('isempty',SymmSpanAllData.("colourtrialsloop.ran"));
+SymmSpanMixedRows = ~cellfun('isempty',SymmSpanAllData.("mixedblock1.ran"));
+SymmSpanRows = ShapeRows | ColourRows | SymmSpanMixedRows;
+
+clear ShapeRows ColourRows SymmSpanMixedRows
+
+SymmSpanData = SymmSpanAllData(SymmSpanRows,~SymmSpanPMatch);
+
+clear SymmSpanRows SymmSpanPMatch
+
+% can't use ~SymmSpanPRows to get SymmSpan rows here because there are other
+% empty rows in addition to the practices
+
+%% Remove extra columns from SymmSpan data
+% loops are: SymmSpan_shapetrials* counterbalance_SymmSpan_shapecolour*
+% SymmSpan_colourtrials* colour_shape_SymmSpan_task*
+
+SymmSpanLoopCol1 = ~cellfun('isempty',regexp(SymmSpanData.Properties.VariableNames,'SymmSpan_shapetrials'));
+SymmSpanLoopCol2 = ~cellfun('isempty',regexp(SymmSpanData.Properties.VariableNames,'counterbalance_SymmSpan_shapecolour'));
+SymmSpanLoopCol3 = ~cellfun('isempty',regexp(SymmSpanData.Properties.VariableNames, 'SymmSpan_colourtrials'));
+SymmSpanLoopCol4 = ~cellfun('isempty',regexp(SymmSpanData.Properties.VariableNames, 'colour_shape_SymmSpan_task'));
+
+SymmSpanLoopCol = SymmSpanLoopCol1 | SymmSpanLoopCol2 | SymmSpanLoopCol3 | SymmSpanLoopCol4;
+
+SymmSpanData = SymmSpanData(:,~SymmSpanLoopCol);
+
+clear SymmSpanLoopCol*
+
+%% Separate SymmSpan dummy
+           
+                    % DUMMY DATA IS BEING INCLUDED TO DO CHECKS IN CASE THE
+                    % FIRST SymmSpan IS IMMEDIATELY AFTER THE DUMMY
+
+% identify dummy columns
+SymmSpanPDummyCols = ~cellfun('isempty',regexp(SymmSpanPData.Properties.VariableNames,'dummy'));
+SymmSpanDummyCols = ~cellfun('isempty',regexp(SymmSpanData.Properties.VariableNames,'dummy'));
+
+SymmSpanPDummyData = SymmSpanPData(:,SymmSpanPDummyCols);
+SymmSpanDummyData = SymmSpanData(:,SymmSpanDummyCols);
+
+SymmSpanPData = SymmSpanPData(:,~SymmSpanPDummyCols);
+SymmSpanData = SymmSpanData(:,~SymmSpanDummyCols);
+
+
+% remove empty rows from dummy
+SymmSpanPDummyData = rmmissing(SymmSpanPDummyData);
+SymmSpanDummyData = rmmissing(SymmSpanDummyData);
+
+clear SymmSpanDummyCols SymmSpanPDummyCols 
+
+
+%% Remove Unnecessary columns from SymmSpan data
+
+SymmSpanPData = SymmSpanPData(:,~ismember(SymmSpanPData.Properties.VariableNames,["practicecolourloop.thisRepN", ...
+   "practicecolourloop.thisTrialN", "practicecolourloop.thisIndex", "practicecolourloop.ran", ...
+   "practiceshapeloop.thisRepN", "practiceshapeloop.thisTrialN", "practiceshapeloop.thisIndex", ...
+   "practiceshapeloop.ran", "practicemixedloop.thisRepN", "practicemixedloop.thisTrialN", ...
+   "practicemixedloop.thisIndex","practicemixedloop.ran"]));
+
+SymmSpanData = SymmSpanData(:,~ismember(SymmSpanData.Properties.VariableNames, ["shapetrialsloop.thisRepN", ...
+    "shapetrialsloop.thisTrialN","shapetrialsloop.thisIndex","shapetrialsloop.ran", ...
+    "colourtrialsloop.thisRepN","colourtrialsloop.thisTrialN","colourtrialsloop.thisIndex", ...
+    "colourtrialsloop.ran","mixedblock1.thisRepN","mixedblock1.thisTrialN", ...
+    "mixedblock1.thisIndex","mixedblock1.ran"]));
+
+%% Rename SymmSpan Columns
+
+% next can rename columns for SymmSpan data, than add in corresponding dummy
+% data to a new row piece by piece, so column order will not be a problem
+
+SymmSpanPData = renamevars(SymmSpanPData, ["pshape_resp.keys","pshape_resp.corr", ...
+    "pshape_resp.rt", "practiceshapeloop.thisN","images","correct", ...
+    "pcolour_resp.keys","pcolour_resp.corr","pcolour_resp.rt","practicecolourloop.thisN", ...
+    "practiceSymmSpanstimuluscondition","practiceSymmSpancondition","practiceSymmSpanstimuluspresented", ...
+    "practiceSymmSpancorrectresponse","mixpracticeresp.keys","mixpracticeresp.corr","mixpracticeresp.rt", ...
+    "practicemixedloop.thisN"], ...
+    ["SymmSpanPShapeResp","SymmSpanPShapeAcc","SymmSpanPShapeRT","SymmSpanPShapeTrial", ...
+    "SymmSpanPStimSingle","SymmSpanPCRespSingle","SymmSpanPColourResp","SymmSpanPColourAcc","SymmSpanPColourRT", ...
+    "SymmSpanPColourTrial","SymmSpanPRule","SymmSpanPCond","SymmSpanPStimMixed","SymmSpanPCRespMixed","SymmSpanPResp", ...
+    "SymmSpanPAcc","SymmSpanPRT","SymmSpanPTrial"]);
+
+SymmSpanData = renamevars(SymmSpanData, ["images", "correct","shapetrialsresp.keys", ...
+    "shapetrialsresp.corr", "shapetrialsresp.rt", "shapetrialsloop.thisN", ...
+    "colourtrialresp.keys", "colourtrialresp.corr", "colourtrialresp.rt", ...
+    "colourtrialsloop.thisN","stimuluscondition","SymmSpancondition","stimuluspresented", ...
+    "correctresponse","mixedtrialsresp.keys","mixedtrialsresp.corr","mixedtrialsresp.rt", ...
+    "mixedblock1.thisN"], ...
+    ["SymmSpanStimSingle", "SymmSpanCRespSingle", "SymmSpanShapeResp","SymmSpanShapeAcc","SymmSpanShapeRT", ...
+    "SymmSpanShapeTrial","SymmSpanColourResp","SymmSpanColourAcc","SymmSpanColourRT", ...
+    "SymmSpanColourTrial","SymmSpanRule","SymmSpanCond","SymmSpanStimMixed","SymmSpanCRespMixed", ...
+    "SymmSpanResp","SymmSpanAcc","SymmSpanRT","SymmSpanTrial"]);
+
+                % some duplicate column names previously for the stimuli and correct
+                % responses, may want to combine the single and mixed task
+                % columns for these, just to simplify things.
+                % could also fill in 'condition' and 'rule' to merge single
+                % and mixed tasks but this might be easy to mix up.
+
+%% Add 1 to counters for SymmSpan
+
+% matlab is treating the columns as cells here, but treated them is doubles
+% for SART.
+SymmSpanPData.("SymmSpanPShapeTrial") = str2double(SymmSpanPData.("SymmSpanPShapeTrial")) + 1;
+SymmSpanPData.("SymmSpanPColourTrial") = str2double(SymmSpanPData.("SymmSpanPColourTrial")) + 1;
+SymmSpanPData.("SymmSpanPTrial") = str2double(SymmSpanPData.("SymmSpanPTrial")) + 2; % plus 2 so dummy is 1
+
+SymmSpanData.("SymmSpanShapeTrial") = str2double(SymmSpanData.("SymmSpanShapeTrial")) + 1;
+SymmSpanData.("SymmSpanColourTrial") = str2double(SymmSpanData.("SymmSpanColourTrial")) + 1;
+SymmSpanData.("SymmSpanTrial") = str2double(SymmSpanData.("SymmSpanTrial")) + 2; % plus 2 so dummy is 1
+
+%% Add Dummies to SymmSpan data
+
+% can't just add an empty thing to the table...
+% assuming the last row is always a mixed/actual SymmSpan task trial (which
+% it should always be) can duplicate that into a new table and refill the
+% rows
+
+PDummyRow = SymmSpanPData(nrows(SymmSpanPData),:);
+
+PDummyRow.("SymmSpanPRule") = SymmSpanPDummyData.("dummypracticeSymmSpanstimuluscondition");
+PDummyRow.("SymmSpanPCond") = SymmSpanPDummyData.("dummypracticeSymmSpancondition");
+PDummyRow.("SymmSpanPStimMixed") = SymmSpanPDummyData.("dummypracticeSymmSpanstimuluspresented");
+PDummyRow.("SymmSpanPCRespMixed") = SymmSpanPDummyData.("dummypracticeSymmSpancorrectresponse");
+PDummyRow.("SymmSpanPResp") = SymmSpanPDummyData.("mixpracticedummyresp.keys");
+PDummyRow.("SymmSpanPAcc") = SymmSpanPDummyData.("mixpracticedummyresp.corr");
+PDummyRow.("SymmSpanPRT") = SymmSpanPDummyData.("mixpracticedummyresp.rt");
+PDummyRow.("SymmSpanPTrial") = 1;
+
+SymmSpanPData = [SymmSpanPData ; PDummyRow];
+
+DummyRow = SymmSpanData(nrows(SymmSpanData),:);
+
+DummyRow.("SymmSpanRule") = SymmSpanDummyData.("dummystimuluscondition");
+DummyRow.("SymmSpanCond") = SymmSpanDummyData.("dummySymmSpancondition");
+DummyRow.("SymmSpanStimMixed") = SymmSpanDummyData.("dummystimuluspresented");
+DummyRow.("SymmSpanCRespMixed") = SymmSpanDummyData.("dummycorrectresponse");
+DummyRow.("SymmSpanResp") = SymmSpanDummyData.("mixeddummyresp.keys");
+DummyRow.("SymmSpanAcc") = SymmSpanDummyData.("mixeddummyresp.corr");
+DummyRow.("SymmSpanRT") = SymmSpanDummyData.("mixeddummyresp.rt");
+DummyRow.("SymmSpanTrial") = 1;
+
+SymmSpanData = [SymmSpanData; DummyRow];
+
+clear PDummyRow DummyRow SymmSpanDummyData SymmSpanPDummyData
 
 %% N-Back Practice
 % 1 back
