@@ -210,7 +210,7 @@ clear opts
 % could also take EFtasksrandomizerloop.thisIndex and create a label with
 % the task each row refers to.
 
-% EFtasksrandomizerloop.thisIndex = 0 = EFTask3 = SymmSpan = SY
+% EFtasksrandomizerloop.thisIndex = 0 = EFTask3 = SymSpan = SY
 % (same as above)"" = 1 = EFTask1 = Switch = SW
 % "" = 2 = EFTask2 = Nback = N
 % "" = 3 = EFTask4 = SART = SA
@@ -222,7 +222,7 @@ clear opts
 % Colour Shape Subtasks:
 % counterbalance_switch_shapecolour.thisIndex = 0 = subtask1 = colour = c
 % "" = 1 = subtask2 = shape = s
-% Symmetry Span Subtasks:
+% Symetry Span Subtasks:
 % symmspansubtasksloop.thisIndex = 0 = s (symmetry judgement)
 % " = 1 = r (recall)
 
@@ -260,16 +260,16 @@ for TaskRandIdx = 0:3
         % find symmspansubtasksloop.thisN
         % SubTaskRandCol = find(strcmp(rawdata.Properties.VariableNames,"symmspansubtasksloop.thisN"));
             % find row where this is 0
-        SymmSubTaskRandRow = find(ismember(rawdata.("symmspansubtasksloop.thisN"),'0'));
-        SymmSubTaskRandIdxNum = rawdata.("symmspansubtasksloop.thisIndex")(SymmSubTaskRandRow);
-        SymmSubTaskRandIdxNum = str2num(cell2mat(SymmSubTaskRandIdxNum(1)));
+        SymSubTaskRandRow = find(ismember(rawdata.("symmspansubtasksloop.thisN"),'0'));
+        SymSubTaskRandIdxNum = rawdata.("symmspansubtasksloop.thisIndex")(SymSubTaskRandRow);
+        SymSubTaskRandIdxNum = str2num(cell2mat(SymSubTaskRandIdxNum(1)));
             % for that row
             % if symmspansubtasksloop.thisIndex = 0
-            if SymmSubTaskRandIdxNum == 0
+            if SymSubTaskRandIdxNum == 0
                 % add 'sr' to task order
                 TaskOrder = [TaskOrder 'sr'];
             % else if symmspansubtasksloop.thisIndex = 1
-            elseif SymmSubTaskRandIdxNum == 1
+            elseif SymSubTaskRandIdxNum == 1
                 % add 'rs' to task order
                 TaskOrder = [TaskOrder 'rs'];
             end
@@ -316,31 +316,11 @@ writetable(TaskInfo, [maindir 'RPS_PsychoPyTaskInfo.csv']);
         % COULD COMBINE ALL NEW TASK INFO BEFORE WRITING IT TO CSV TO
         % REDUCE READING AND WRITING STEPS
 
-clear TaskRandCol TaskRandIdx TaskRandIdxNum TaskRandRow SymmSubTaskRandRow 
-clear SymmSubTaskRandIdxNum SwitchSubTaskRandRow SwitchSubTaskRandIdxNum
+clear TaskRandCol TaskRandIdx TaskRandIdxNum TaskRandRow SymSubTaskRandRow 
+clear SymSubTaskRandIdxNum SwitchSubTaskRandRow SwitchSubTaskRandIdxNum
 clear psychopyversion OS frameRate TaskOrder NewTaskInfo TaskInfo
 
         % WILL NEED ID DATE EXPNAME FOR NAMING THE OUTPUT FILES
-
-%% Create a new table for practice data
-    % except we can't just do this because some columns have a mix of
-    % information from the practice and actual tasks
-
-%% Create separate tables for tasks SART
-
-% cannot just concatinate with rawdata.variables
-% create an index?
-
-%T(:,ismember(T.Properties.VariableNames, {""list of variables""})) this
-% doesn't work with wild cards
-
-SARTMatch = ~cellfun('isempty', regexp(rawdata.Properties.VariableNames, 'SART'));
-SARTAllData = rawdata(:,rawdata.Properties.VariableNames(SARTMatch));
-% doesn't get us the extra column for number
-
-SARTAllData.("number") = rawdata.("number");
-SARTAllData.("correctkey") = rawdata.("correctkey");
-% adds the extra column to the end.
             
 %% SART Practice:
 % SARTkey_resp_practice.keys, SARTkey_resp_practice.corr,
@@ -362,6 +342,22 @@ SARTAllData.("correctkey") = rawdata.("correctkey");
 %% SART Excess:
 % SARTloop.thisRepN, SARTloop.thisTrialN, SARTloop.thisN,
 % SARTloop.thisIndex, SARTloop.ran,
+
+%% Create separate tables for tasks SART
+
+% cannot just concatinate with rawdata.variables
+% create an index?
+
+%T(:,ismember(T.Properties.VariableNames, {""list of variables""})) this
+% doesn't work with wild cards
+
+SARTMatch = ~cellfun('isempty', regexp(rawdata.Properties.VariableNames, 'SART'));
+SARTAllData = rawdata(:,rawdata.Properties.VariableNames(SARTMatch));
+% doesn't get us the extra column for number
+
+SARTAllData.("number") = rawdata.("number");
+SARTAllData.("correctkey") = rawdata.("correctkey");
+% adds the extra column to the end.
 
 %% Separating practice from task for SART
 
@@ -763,8 +759,8 @@ SwitchData = [SwitchData; DummyRow];
 
 clear PDummyRow DummyRow SwitchDummyData SwitchPDummyData
 
-%% Symmetry Span Practice
-% Symm
+%% Symetry Span Practice
+% Sym
 % practicepresentedsymmstim, practicesymmcorrectresponse,
 % practicesymmresponse, practicesymmaccuracy, practiceresponse.clicked_name
 % symmpracticeloop.thisRepN, symmpracticeloop.thisTrialN,
@@ -785,14 +781,14 @@ clear PDummyRow DummyRow SwitchDummyData SwitchPDummyData
 % symmspanrecallploop.thisTrialN, symmspanrecallploop.thisN, symmspanrecallploop.thisIndex, 
 % symmspanrecallploop.ran, symmspanploop.thisRepN, symmspanploop.thisTrialN, 
 % symmspanploop.thisN, symmspanploop.thisIndex, symmspanploop.ran
-%% Symmetry Span Stimuli
+%% Symetry Span Stimuli
 % loopnumber (which spreadsheet was used for a series; includes recall and
 % mixed practice)
 % memnumber (number of items to recall based on loopnumber spreadsheet; includes
 % recall and mixed practice)
-%% Symmetry Span Scoring
+%% Symetry Span Scoring
 % symmetrical (is the stimulus symmetrical, also part of practice)
-% Symmetry
+% Symetry
 % presentedsymmstim (.JPG presented)
 % symmcorrectresponse (["name of correct response"])
 % symmresponse (["name of actual response"])
@@ -818,8 +814,8 @@ clear PDummyRow DummyRow SwitchDummyData SwitchPDummyData
 % within series to keep things in order).
 % Remove: symmspanblocksloop.thisRepN, symmspanblocksloop.thisTrialN
 % (loops of the four length conditions), symmspanblocksloop.thisIndex, symmspanblocksloop.ran
-%% Symmetry Span Excess
-% Symm
+%% Symetry Span Excess
+% Sym
 % symmetryloop.thisRepN, symmetryloop.thisTrialN, symmetryloop.thisN, symmetryloop.thisIndex, 
 % symmetryloop.ran
 % Recall
@@ -829,7 +825,7 @@ clear PDummyRow DummyRow SwitchDummyData SwitchPDummyData
 % symmspanendkey.keys, symmspanendkey.rt, symmspantaskloop.thisRepN, symmspantaskloop.thisTrialN, 
 % symmspantaskloop.thisN, symmspantaskloop.thisIndex, symmspantaskloop.ran
 
-%% Create separate tables for SymmSpan
+%% Create separate tables for SymSpan
 
                 % REMEMBER THAT OLDER DATA ARE MISSING THE ".time" COLUMNS
                 % having timing also added other columns related to
@@ -841,8 +837,8 @@ clear PDummyRow DummyRow SwitchDummyData SwitchPDummyData
 % and "recallloop." items (period is needed to reduce overlap)
 % and requires adding: practicerecallaccuracy, loopnumber, memnumber, recallaccuracy
 
-SymmMatch = ~cellfun('isempty', regexp(rawdata.Properties.VariableNames, 'symm'));
-SymmData = rawdata(:,rawdata.Properties.VariableNames(SymmMatch));
+SymMatch = ~cellfun('isempty', regexp(rawdata.Properties.VariableNames, 'symm'));
+SymData = rawdata(:,rawdata.Properties.VariableNames(SymMatch));
 
 SquareMatch = ~cellfun('isempty', regexp(rawdata.Properties.VariableNames, 'square'));
 SquareData = rawdata(:,rawdata.Properties.VariableNames(SquareMatch));
@@ -858,81 +854,79 @@ SquareData = SquareData(:,SquareData.Properties.VariableNames(~OverLapMatch3));
 
 % combine
 
-SymmSpanAllData = [SymmData SquareData PRespData RecallLoopData];
+SymSpanAllData = [SymData SquareData PRespData RecallLoopData];
 
 % add extra columns
-SymmSpanAllData.("practicerecallaccuracy") = rawdata.("practicerecallaccuracy");
-SymmSpanAllData.("loopnumber") = rawdata.("loopnumber");
-SymmSpanAllData.("memnumber") = rawdata.("memnumber");
-SymmSpanAllData.("recallaccuracy") = rawdata.("recallaccuracy");
+SymSpanAllData.("practicerecallaccuracy") = rawdata.("practicerecallaccuracy");
+SymSpanAllData.("loopnumber") = rawdata.("loopnumber");
+SymSpanAllData.("memnumber") = rawdata.("memnumber");
+SymSpanAllData.("recallaccuracy") = rawdata.("recallaccuracy");
 
-clear SymmMatch SymmData SquareMatch SquareData PRespMatch PRespData RecallLoopMatch RecallLoopData OverLapMatch3
+clear SymMatch SymData SquareMatch SquareData PRespMatch PRespData RecallLoopMatch RecallLoopData OverLapMatch3
 
-%% Separating practice from task for SymmSpan
+%% Separating practice from task for SymSpan
 
 % symmetry, recall, and the full combined task have practice sections.
 
-SymmPracticeMatch = ~cellfun('isempty', regexp(SymmSpanAllData.Properties.VariableNames, 'practice'));
-RecalLoopMatch = ~cellfun('isempty', regexp(SymmSpanAllData.Properties.VariableNames, 'recallloop'));
-SymmetryLoopMatch = ~cellfun('isempty', regexp(SymmSpanAllData.Properties.VariableNames, 'symmetryloop'));
-PLoopMatch = ~cellfun('isempty', regexp(SymmSpanAllData.Properties.VariableNames, 'ploop'));
-SquareRespPMatch = ~cellfun('isempty', regexp(SymmSpanAllData.Properties.VariableNames, 'square_resp_2'));
+SymPracticeMatch = ~cellfun('isempty', regexp(SymSpanAllData.Properties.VariableNames, 'practice'));
+RecalLoopMatch = ~cellfun('isempty', regexp(SymSpanAllData.Properties.VariableNames, 'recallloop'));
+SymetryLoopMatch = ~cellfun('isempty', regexp(SymSpanAllData.Properties.VariableNames, 'symmetryloop'));
+PLoopMatch = ~cellfun('isempty', regexp(SymSpanAllData.Properties.VariableNames, 'ploop'));
+SquareRespPMatch = ~cellfun('isempty', regexp(SymSpanAllData.Properties.VariableNames, 'square_resp_2'));
 
-SymmSpanPMatch = SymmPracticeMatch | RecalLoopMatch | SymmetryLoopMatch | PLoopMatch | SquareRespPMatch;
+SymSpanPMatch = SymPracticeMatch | RecalLoopMatch | SymetryLoopMatch | PLoopMatch | SquareRespPMatch;
 
-clear SymmPracticeMatch RecalLoopMatch SymmetryLoopMatch PLoopMatch SquareRespPMatch
+clear SymPracticeMatch RecalLoopMatch SymetryLoopMatch PLoopMatch SquareRespPMatch
 
 % for the practice columns, there is data only during the practice while
 % the rest is empty cells, so rows can be eliminated this way
 % there are, however, many rows that are separate for each loop within a
 % loop
 
-        % MAY NEED TO RECOMBINE THINGS TO REDUCE EXTRA COLUMNS AND ROWS
+SymPRows = ~cellfun('isempty',SymSpanAllData.("symmpracticeloop.ran"));
+RecallPresPRows = ~cellfun('isempty',SymSpanAllData.("symmpracticesquareloop.ran"));
+RecallRespPRows = ~cellfun('isempty',SymSpanAllData.("symmpracticerecalloop.ran"));
+RecallPRows = ~cellfun('isempty',SymSpanAllData.("symmmempracticeloop.ran"));
+MixSymPRows = ~cellfun('isempty',SymSpanAllData.("symmspansymmploop.ran"));
+MixRecallPRows = ~cellfun('isempty',SymSpanAllData.("symmspanrecallploop.ran"));
+SymSpanMixPRows = ~cellfun('isempty',SymSpanAllData.("symmspanploop.ran"));
 
-SymmPRows = ~cellfun('isempty',SymmSpanAllData.("symmpracticeloop.ran"));
-RecallPresPRows = ~cellfun('isempty',SymmSpanAllData.("symmpracticesquareloop.ran"));
-RecallRespPRows = ~cellfun('isempty',SymmSpanAllData.("symmpracticerecalloop.ran"));
-RecallPRows = ~cellfun('isempty',SymmSpanAllData.("symmmempracticeloop.ran"));
-MixSymmPRows = ~cellfun('isempty',SymmSpanAllData.("symmspansymmploop.ran"));
-MixRecallPRows = ~cellfun('isempty',SymmSpanAllData.("symmspanrecallploop.ran"));
-SymmSpanMixPRows = ~cellfun('isempty',SymmSpanAllData.("symmspanploop.ran"));
+SymSpanPRows = SymPRows | RecallPresPRows | RecallRespPRows | RecallPRows | MixSymPRows | MixRecallPRows | SymSpanMixPRows;
 
-SymmSpanPRows = SymmPRows | RecallPresPRows | RecallRespPRows | RecallPRows | MixSymmPRows | MixRecallPRows | SymmSpanMixPRows;
+clear SymPRows RecallPresPRows RecallRespPRows RecallPRows MixSymPRows MixRecallPRows SymSpanMixPRows
 
-clear SymmPRows RecallPresPRows RecallRespPRows RecallPRows MixSymmPRows MixRecallPRows SymmSpanMixPRows
-
-SymmSpanPData = SymmSpanAllData(SymmSpanPRows,:);
+SymSpanPData = SymSpanAllData(SymSpanPRows,:);
 
 % need to add 'symmetrical', 'loopnumber', 'memnumber'
 
-SymmSpanPSymmetrical = SymmSpanPData.("symmetrical");
-SymmSpanPLoopNum = SymmSpanPData.("loopnumber");
-SymmSpanPMemNum = SymmSpanPData.("memnumber");
+SymSpanPSymetrical = SymSpanPData.("symmetrical");
+SymSpanPLoopNum = SymSpanPData.("loopnumber");
+SymSpanPMemNum = SymSpanPData.("memnumber");
 
-SymmSpanPData = SymmSpanPData(:,SymmSpanPMatch);
+SymSpanPData = SymSpanPData(:,SymSpanPMatch);
 
-SymmSpanPData.("symmetrical") = SymmSpanPSymmetrical;
-SymmSpanPData.("loopnumber") = SymmSpanPLoopNum;
-SymmSpanPData.("memnumber") = SymmSpanPMemNum;
+SymSpanPData.("symmetrical") = SymSpanPSymetrical;
+SymSpanPData.("loopnumber") = SymSpanPLoopNum;
+SymSpanPData.("memnumber") = SymSpanPMemNum;
 
-clear SymmSpanPSymmetrical SymmSpanPLoopNum SymmSpanPMemNum SymmSpanPRows
+clear SymSpanPSymetrical SymSpanPLoopNum SymSpanPMemNum SymSpanPRows
 
 % older data should have 57 columns in practice
 % newer data should have 69 columns in practice
 
 % can use ~ to get the task data only.
 
-SymmRows = ~cellfun('isempty',SymmSpanAllData.("symmspanblocksymmloop.ran"));
-RecallRows = ~cellfun('isempty',SymmSpanAllData.("symmspanrecallblocksloop.ran"));
-SymmSpanMixedRows = ~cellfun('isempty',SymmSpanAllData.("symmspanblocksloop.ran"));
+SymRows = ~cellfun('isempty',SymSpanAllData.("symmspanblocksymmloop.ran"));
+RecallRows = ~cellfun('isempty',SymSpanAllData.("symmspanrecallblocksloop.ran"));
+SymSpanMixedRows = ~cellfun('isempty',SymSpanAllData.("symmspanblocksloop.ran"));
 
-SymmSpanRows = SymmRows | RecallRows | SymmSpanMixedRows;
+SymSpanRows = SymRows | RecallRows | SymSpanMixedRows;
 
-clear SymmSpanMixedRows RecallRows SymmRows
+clear SymSpanMixedRows RecallRows SymRows
 
-SymmSpanData = SymmSpanAllData(SymmSpanRows,~SymmSpanPMatch);
+SymSpanData = SymSpanAllData(SymSpanRows,~SymSpanPMatch);
 
-clear SymmSpanRows SymmSpanPMatch
+clear SymSpanRows SymSpanPMatch
 
 % older data should have 39 columns
 % newer data should have 51 columns
@@ -943,76 +937,76 @@ clear SymmSpanRows SymmSpanPMatch
 % on it's own, strcmp isn't great because it makes a logical array checking
 % every variable name.
 
-if isempty(find(strcmp("practiceresponse.time",SymmSpanPData.Properties.VariableNames)))
+if isempty(find(strcmp("practiceresponse.time",SymSpanPData.Properties.VariableNames)))
     % if there are no columns with this name
     
-    SymmSpanPData.("practiceresponse.time") = strings(nrows(SymmSpanPData),1);
-    SymmSpanPData.("square_resp_2.time") = strings(nrows(SymmSpanPData),1);
+    SymSpanPData.("practiceresponse.time") = strings(nrows(SymSpanPData),1);
+    SymSpanPData.("square_resp_2.time") = strings(nrows(SymSpanPData),1);
     % create that column
 end
 
-if isempty(find(strcmp("symmresponseclick.time",SymmSpanData.Properties.VariableNames)))
+if isempty(find(strcmp("symmresponseclick.time",SymSpanData.Properties.VariableNames)))
     % if there are no columns with this name
     
-    SymmSpanData.("symmresponseclick.time") = strings(nrows(SymmSpanData),1);
-    SymmSpanData.("square_resp.time") = strings(nrows(SymmSpanData),1);
+    SymSpanData.("symmresponseclick.time") = strings(nrows(SymSpanData),1);
+    SymSpanData.("square_resp.time") = strings(nrows(SymSpanData),1);
     % create that column
 end
 
 % older practice data should now have 59 columns, data should have 41
 
-%% Rename SymmSpan Columns
+%% Rename SymSpan Columns
 
-% next can rename columns for SymmSpan data, than add in corresponding dummy
+% next can rename columns for SymSpan data, than add in corresponding dummy
 % data to a new row piece by piece, so column order will not be a problem
 
-SymmSpanPData = renamevars(SymmSpanPData, ["practicepresentedsymmstim","practicesymmcorrectresponse", "practicesymmaccuracy", ...
+SymSpanPData = renamevars(SymSpanPData, ["practicepresentedsymmstim","practicesymmcorrectresponse", "practicesymmaccuracy", ...
     "practiceresponse.time","practiceresponse.clicked_name","symmpracticeloop.thisN","practicesquarecorrectresponse", ...
     "symmpracticesquareloop.thisN","practicerecallaccuracy","square_resp_2.time","square_resp_2.clicked_name","symmmempracticeloop.thisN", ...
     "memnumber","symmspansymmploop.thisN","symmspanrecallploop.thisN","symmspanploop.thisN",], ...
     ["SymSpanPSymStim","SymSpanPSymCResp","SymSpanPSymAcc","SymSpanPSymRT","SymSpanPSymResp","SymSpanPSymTrial","SymSpanPRecStim", ...
     "SymSpanPRecTrialsPerSeries", "SymSpanPRecAcc","SymSpanPRecRT","SymSpanPRecResp","SymSpanPRecSeries","SymSpanPRecSeriesCond", ...
-    "SymSpanPMixSymRecPresTrialsPerSeries","SymSpanPMixRecRespTrialsPerSeries","SymSpanPMixRecRespSeries",]);
+    "SymSpanPMixPresTrialsPerSeries","SymSpanPMixRecRespTrialsPerSeries","SymSpanPMixRecRespSeries",]);
 
-SymmSpanData = renamevars(SymmSpanData, ["memnumber","presentedsymmstim","symmcorrectresponse","symmresponse","symmaccuracy", ...
+SymSpanData = renamevars(SymSpanData, ["memnumber","presentedsymmstim","symmcorrectresponse","symmresponse","symmaccuracy", ...
     "symmresponseclick.time","squarecorrectresponse","symmspanblocksymmloop.thisTrialN","recallaccuracy","square_resp.time", ...
     "square_resp.clicked_name","symmspanrecallblocksloop.thisN","symmspanblocksloop.thisN"], ...
-    ["SymSpanMixSeriesCond ","SymSpanMixSymStim","SymSpanMixSymCResp","SymSpanMixSymResp","SymSpanMixSymAcc","SymSpanMixSymRT", ...
-    "SymmSpanMixRecStim","SymmSpanMixSymRecPresTrialsPerSeries","SymSpanMixRecAcc","SymSpanMixRecRT","SymSpanMixRecResp", ...
+    ["SymSpanMixSeriesCond","SymSpanMixSymStim","SymSpanMixSymCResp","SymSpanMixSymResp","SymSpanMixSymAcc","SymSpanMixSymRT", ...
+    "SymSpanMixRecStim","SymSpanMixPresTrialsPerSeries","SymSpanMixRecAcc","SymSpanMixRecRT","SymSpanMixRecResp", ...
     "SymSpanMixRecTrialsPerSeries","SymSpanMixRecRespSeries"]);
 
         % SINGLE AND MIXED PRACTICE SECTIONS SHARE SOME COLUMNS
 
-%% Remove extra columns from SymmSpan data
+%% Remove extra columns from SymSpan data
 % loops must be removed after renaming since some extra loop columns are
 % also counters
 
 % all the data we care about starts with "Sym*"
 
-SymmSpanPCols = ~cellfun('isempty',regexp(SymmSpanPData.Properties.VariableNames,'Sym*'));
+SymSpanPCols = ~cellfun('isempty',regexp(SymSpanPData.Properties.VariableNames,'Sym*'));
 
-SymmSpanCols = ~cellfun('isempty',regexp(SymmSpanData.Properties.VariableNames,'Sym*'));
+SymSpanCols = ~cellfun('isempty',regexp(SymSpanData.Properties.VariableNames,'Sym*'));
 
-SymmSpanPData = SymmSpanPData(:,SymmSpanPCols);
-SymmSpanData = SymmSpanData(:,SymmSpanCols);
+SymSpanPData = SymSpanPData(:,SymSpanPCols);
+SymSpanData = SymSpanData(:,SymSpanCols);
 
-clear SymmSpanPCols SymmSpanCols
+clear SymSpanPCols SymSpanCols
 
 % practice data should have 16 columns
 % data should have 13 columns
 
-%% Add 1 to counters for SymmSpan
+%% Add 1 to counters for SymSpan
 
-SymmSpanPData.("SymSpanPSymTrial") = str2double(SymmSpanPData.("SymSpanPSymTrial")) + 1;
-SymmSpanPData.("SymSpanPRecTrialsPerSeries") = str2double(SymmSpanPData.("SymSpanPRecTrialsPerSeries")) + 1;
-SymmSpanPData.("SymSpanPRecSeries") = str2double(SymmSpanPData.("SymSpanPRecSeries")) + 1;
-SymmSpanPData.("SymSpanPMixSymRecPresTrialsPerSeries") = str2double(SymmSpanPData.("SymSpanPMixSymRecPresTrialsPerSeries")) + 1;
-SymmSpanPData.("SymSpanPMixRecRespTrialsPerSeries") = str2double(SymmSpanPData.("SymSpanPMixRecRespTrialsPerSeries")) + 1;
-SymmSpanPData.("SymSpanPMixRecRespSeries") = str2double(SymmSpanPData.("SymSpanPMixRecRespSeries")) + 1;
+SymSpanPData.("SymSpanPSymTrial") = str2double(SymSpanPData.("SymSpanPSymTrial")) + 1;
+SymSpanPData.("SymSpanPRecTrialsPerSeries") = str2double(SymSpanPData.("SymSpanPRecTrialsPerSeries")) + 1;
+SymSpanPData.("SymSpanPRecSeries") = str2double(SymSpanPData.("SymSpanPRecSeries")) + 1;
+SymSpanPData.("SymSpanPMixPresTrialsPerSeries") = str2double(SymSpanPData.("SymSpanPMixPresTrialsPerSeries")) + 1;
+SymSpanPData.("SymSpanPMixRecRespTrialsPerSeries") = str2double(SymSpanPData.("SymSpanPMixRecRespTrialsPerSeries")) + 1;
+SymSpanPData.("SymSpanPMixRecRespSeries") = str2double(SymSpanPData.("SymSpanPMixRecRespSeries")) + 1;
 
-SymmSpanData.("SymmSpanMixSymRecPresTrialsPerSeries") = str2double(SymmSpanData.("SymmSpanMixSymRecPresTrialsPerSeries")) + 1;
-SymmSpanData.("SymSpanMixRecTrialsPerSeries") = str2double(SymmSpanData.("SymSpanMixRecTrialsPerSeries")) + 1;
-SymmSpanData.("SymSpanMixRecRespSeries") = str2double(SymmSpanData.("SymSpanMixRecRespSeries")) + 1;
+SymSpanData.("SymSpanMixPresTrialsPerSeries") = str2double(SymSpanData.("SymSpanMixPresTrialsPerSeries")) + 1;
+SymSpanData.("SymSpanMixRecTrialsPerSeries") = str2double(SymSpanData.("SymSpanMixRecTrialsPerSeries")) + 1;
+SymSpanData.("SymSpanMixRecRespSeries") = str2double(SymSpanData.("SymSpanMixRecRespSeries")) + 1;
 
         % looking at the data at this point, it would be good to shift the
         % reponses up for the squares so that they're in the same rows.
@@ -1024,7 +1018,7 @@ SymmSpanData.("SymSpanMixRecRespSeries") = str2double(SymmSpanData.("SymSpanMixR
         % response redundant but that would be good for checking things
         % later.
 
-% test1 = SymmSpanPData;
+% test1 = SymSpanPData;
 % test1.("SymSpanPRecResp") = circshift(test1.("SymSpanPRecResp"),[-2 0]);
 % this works but doesn't account for the extra columns between responses
 % from SymSpanPRecSeries
@@ -1036,7 +1030,8 @@ SymmSpanData.("SymSpanMixRecRespSeries") = str2double(SymmSpanData.("SymSpanMixR
 % need to identify the currently filled rows that are otherwise empty for
 % removal later
 % SymSpanPRecSeriesCond applies to all practices
-SymPSeriesRows = cellfun('isempty',SymmSpanPData.("SymSpanPRecSeriesCond"));
+% SymPSeriesRows = cellfun('isempty',SymSpanPData.("SymSpanPRecSeriesCond"));
+% Need to remove more rows than this
 
 % for all NaN rows for SymSpanPRecSeries (except the first ten rows from
 % the symmetry practice).
@@ -1045,9 +1040,9 @@ SymPSeriesRows = cellfun('isempty',SymmSpanPData.("SymSpanPRecSeriesCond"));
 % except this column is for the recall practice only, so need to stop this
 % after the last number of SymSpanPRecSeries
 
-% for precseriesidx = 11:(find(~isnan(SymmSpanPData.("SymSpanPRecSeries")),1,'last'))
+% for precseriesidx = 11:(find(~isnan(SymSpanPData.("SymSpanPRecSeries")),1,'last'))
     % for those rows that are part of recall series
-   % if isnan(SymmSpanPData.("SymSpanPRecSeries")(precseriesidx))
+   % if isnan(SymSpanPData.("SymSpanPRecSeries")(precseriesidx))
         % if there is no number
         % find the next number in SymSpanPRecSeries
         
@@ -1058,26 +1053,31 @@ SymPSeriesRows = cellfun('isempty',SymmSpanPData.("SymSpanPRecSeriesCond"));
 % this works, just need to leave the non-series rows NaN
 
 % can't use fill missing on one row at a time in a loop
-MinPRecSeriesRow = find(~isnan(SymmSpanPData.("SymSpanPRecSeries")),1,'first');
-MaxPRecSeriesRow = find(~isnan(SymmSpanPData.("SymSpanPRecSeries")),1,'last');
+MinPRecSeriesRow = find(~isnan(SymSpanPData.("SymSpanPRecTrialsPerSeries")),1,'first');
+MaxPRecSeriesRow = find(~isnan(SymSpanPData.("SymSpanPRecSeries")),1,'last');
 
-SymmSpanPData.("SymSpanPRecSeries")(MinPRecSeriesRow:MaxPRecSeriesRow) = fillmissing( ...
-    SymmSpanPData.("SymSpanPRecSeries")(MinPRecSeriesRow:MaxPRecSeriesRow),'next');
+SymSpanPData.("SymSpanPRecSeries")(MinPRecSeriesRow:MaxPRecSeriesRow) = fillmissing( ...
+    SymSpanPData.("SymSpanPRecSeries")(MinPRecSeriesRow:MaxPRecSeriesRow),'next');
 
 % same thing for SymSpanPRecSeriesCond
-MaxPCondRow = find(~cellfun('isempty',SymmSpanPData.("SymSpanPRecSeriesCond")),1,'last');
+MaxPCondRow = find(~cellfun('isempty',SymSpanPData.("SymSpanPRecSeriesCond")),1,'last');
 
-SymmSpanPData.("SymSpanPRecSeriesCond")(MinPRecSeriesRow:MaxPCondRow) = fillmissing( ...
-    SymmSpanPData.("SymSpanPRecSeriesCond")(MinPRecSeriesRow:MaxPCondRow),'next');
+SymSpanPData.("SymSpanPRecSeriesCond")(MinPRecSeriesRow:MaxPCondRow) = fillmissing( ...
+    SymSpanPData.("SymSpanPRecSeriesCond")(MinPRecSeriesRow:MaxPCondRow),'next');
 
 % same thing for SymSpanPMixRecRespSeries
-MaxPMixSeriesRow = find(~isnan(SymmSpanPData.("SymSpanPMixRecRespSeries")),1,'last');
+MaxPMixSeriesRow = find(~isnan(SymSpanPData.("SymSpanPMixRecRespSeries")),1,'last');
 % may be the same as max p cond row but doing this just in case
 
-SymmSpanPData.("SymSpanPMixRecRespSeries")(MaxPRecSeriesRow:MaxPMixSeriesRow) = fillmissing( ...
-    SymmSpanPData.("SymSpanPMixRecRespSeries")(MaxPRecSeriesRow:MaxPMixSeriesRow),'next');
+SymSpanPData.("SymSpanPMixRecRespSeries")(MaxPRecSeriesRow:MaxPMixSeriesRow) = fillmissing( ...
+    SymSpanPData.("SymSpanPMixRecRespSeries")(MaxPRecSeriesRow:MaxPMixSeriesRow),'next');
 
+clear MinPRecSeriesRow MaxPRecSeriesRow MaxPCondRow MaxPMixSeriesRow 
 
+% Non-Practice doesn't have so many extra parts since it's just the mixed
+
+SymSpanData.("SymSpanMixRecRespSeries") = fillmissing(SymSpanData.("SymSpanMixRecRespSeries"),'next');
+SymSpanData.("SymSpanMixSeriesCond") = fillmissing(SymSpanData.("SymSpanMixSeriesCond"),'next');
 
 %% Redefine Condition Number to Move Presentation and Response Data Into the Same Rows
 % still can't just move other columns up because spacing differs between
@@ -1085,9 +1085,68 @@ SymmSpanPData.("SymSpanPMixRecRespSeries")(MaxPRecSeriesRow:MaxPMixSeriesRow) = 
 % many rows to move up some values
 % but need to convert these to numbers
 
-test.("SymSpanPRecSeriesCond") = str2double(test.("SymSpanPRecSeriesCond"));
+SymSpanPData.("SymSpanPRecSeriesCond") = str2double(SymSpanPData.("SymSpanPRecSeriesCond"));
 
-        % START HERE NEXT TIME
+% for rows with data for SymSpanPRecResp (and SymSpanPRecAcc)
+for SymPRespRow = 1:nrows(SymSpanPData)
+    if ~cellfun('isempty',SymSpanPData.("SymSpanPRecResp")(SymPRespRow))
+        % find the SymSpanPRecSeriesCond number
+        PRowsUp = SymSpanPData.("SymSpanPRecSeriesCond")(SymPRespRow);
+        SymSpanPData.("SymSpanPRecResp")(SymPRespRow-PRowsUp) = SymSpanPData.("SymSpanPRecResp")(SymPRespRow);
+        SymSpanPData.("SymSpanPRecAcc")(SymPRespRow-PRowsUp) = SymSpanPData.("SymSpanPRecAcc")(SymPRespRow);
+        SymSpanPData.("SymSpanPMixRecRespTrialsPerSeries")(SymPRespRow-PRowsUp) = SymSpanPData.("SymSpanPMixRecRespTrialsPerSeries")(SymPRespRow);
+    end
+end
+
+% move things up the number of rows corresponding to SymSpanPRecSeriesCond number
+% test1.("SymSpanPRecResp") = circshift(test1.("SymSpanPRecResp"),[-2 0]);
+% this only works when shifting the full row or column
+% assign the value two cells up instead
+
+clear SymPRespRow PRowsUp
+
+% then for actual data
+
+SymSpanData.("SymSpanMixSeriesCond") = str2double(SymSpanData.("SymSpanMixSeriesCond"));
+
+for SymRespRow = 1:nrows(SymSpanData)
+    if ~cellfun('isempty',SymSpanData.("SymSpanMixRecResp")(SymRespRow))
+        RowsUp = SymSpanData.("SymSpanMixSeriesCond")(SymRespRow);
+        SymSpanData.("SymSpanMixRecResp")(SymRespRow-RowsUp) = SymSpanData.("SymSpanMixRecResp")(SymRespRow);
+        SymSpanData.("SymSpanMixRecAcc")(SymRespRow-RowsUp) = SymSpanData.("SymSpanMixRecAcc")(SymRespRow);
+        SymSpanData.("SymSpanMixRecTrialsPerSeries")(SymRespRow-RowsUp) = SymSpanData.("SymSpanMixRecTrialsPerSeries")(SymRespRow);
+    end
+end
+
+clear SymRespRow RowsUp
+
+%% Remove extra rows
+
+% then combine when SymSpanPSymStim and SymSpanPRecStim are empty
+PSymStimRows = ~cellfun('isempty',SymSpanPData.("SymSpanPSymStim"));
+PRecStimPRows = ~cellfun('isempty',SymSpanPData.("SymSpanPRecStim"));
+
+SymPRows = PSymStimRows | PRecStimPRows;
+
+SymSpanPData = SymSpanPData(SymPRows,:);
+
+clear PSymStimRows PRecStimPRows SymPRows
+
+% could probably just combine the presentation and response number columns
+% but maybe there's a way these might not be equal. 
+% coudl also combine response series columns but want the recall practice
+% and mix practice to  be separate 
+
+
+% combine when SymSpamMixSymStim and SymSpanMixRecStim are empty
+SymStimRows = ~cellfun('isempty',SymSpanData.("SymSpanMixSymStim"));
+RecStimRows = ~cellfun('isempty',SymSpanData.("SymSpanMixRecStim"));
+
+SymRows = SymStimRows | RecStimRows;
+
+SymSpanData = SymSpanData(SymRows,:);
+
+clear SymStimRows RecStimRows SymRows
 
 %% N-Back Practice
 % 1 back
@@ -1126,6 +1185,98 @@ test.("SymSpanPRecSeriesCond") = str2double(test.("SymSpanPRecSeriesCond"));
 % Remove: trials_2backloop.thisRepN, trials_2backloop.thisIndex, trials_2backloop.ran
 %% N-Back Excess
 % nbacktask.thisRepN, nbacktask.thisTrialN, nbacktask.thisN, nbacktask.thisIndex, nbacktask.ran
+
+%% Create separate tables for tasks NBack
+
+% Most NBack columns should have the word 'back' in them except
+
+NBackMatch = ~cellfun('isempty', regexp(rawdata.Properties.VariableNames, 'back'));
+NBackAllData = rawdata(:,rawdata.Properties.VariableNames(NBackMatch));
+
+% add columns for 'letter' and 'target'
+
+NBackAllData.("letter") = rawdata.("letter");
+NBackAllData.("target") = rawdata.("target");
+% adds the extra column to the end.
+
+clear NBackMatch
+
+%% Separating practice from task for NBack
+
+% for the practice columns, there is data only during the practice while
+% the rest is NaN
+% so if I select only those rows where the practice section is not NaN I
+% can keep just the rows that matter from the extra columns
+
+% practices do not have dummys
+% 'letter' corresponds to the letters in only the practice sections so can
+% just select based on that
+
+NBackPRows = ~cellfun('isempty',NBackAllData.("letter"));
+NBackPData = NBackAllData(NBackPRows,:);
+
+NBackPData(:,all(ismissing(NBackPData))) = [];
+% clears all full empty oclumns so no extra columns in the practice.
+
+clear NBackPRows
+
+% Actual task data has two dummy rows before the 1-back and 2-back tasks
+% could I just get not the columns in the practice data?
+% Can't find a good way to do this.
+
+NBackPMatch1 = ~cellfun('isempty', regexp(NBackAllData.Properties.VariableNames, 'practice'));
+NBackPMatch2 = ~cellfun('isempty', regexp(NBackAllData.Properties.VariableNames, 'presp'));
+
+NBackPMatch = NBackPMatch1 | NBackPMatch2;
+
+% combine rows where dummy1backloop.ran, dummy2backloop.ran, and target are
+% empty
+
+NBackDummy1Rows = ~cellfun('isempty',NBackAllData.("dummy1backloop.ran"));
+NBackDummy2Rows = ~cellfun('isempty',NBackAllData.("dummy2backloop.ran"));
+NBackTargetRows = ~cellfun('isempty',NBackAllData.("target"));
+
+NBackRows = NBackDummy1Rows | NBackDummy2Rows | NBackTargetRows;
+
+NBackData = NBackAllData(NBackRows,~NBackPMatch);
+
+% Can't just remove all empty variables because they should not respond to
+% the dummys but might
+
+% Practice should have 17 columns, actual should have 41 columns
+
+%% Remove more extra columns for NBack
+
+            % START HERE NEXT TIME
+            
+NBackPData = NBackPData(:,~ismember(NBackPData.Properties.VariableNames, ["NBackpracticeloop.thisRepN", ...
+    "NBackpracticeloop.thisTrialN", "NBackpracticeloop.thisIndex", "NBackpracticeloop.ran"]));
+
+NBackData = NBackData(:,~ismember(NBackData.Properties.VariableNames,["NBackblock1loop.thisRepN", ...
+    "NBackblock1loop.thisTrialN","NBackblock1loop.thisIndex","NBackblock1loop.ran"]));
+
+% 6 columns in practice and actual data
+
+%% Add 1 to counters for NBack
+NBackPData.("NBackpracticeloop.thisN") = NBackPData.("NBackpracticeloop.thisN") + 1;
+
+NBackData.("NBackblock1loop.thisN") = NBackData.("NBackblock1loop.thisN") + 1;
+
+%% Rename NBack columns
+NBackPData = renamevars(NBackPData,["NBackkey_resp_practice.keys", ...
+    "NBackkey_resp_practice.corr", "NBackkey_resp_practice.rt",  ...
+    "NBackpracticeloop.thisN","number","correctkey"], ...
+    ["NBackPResp","NBackPAcc","NBackPRT","NBackPTrial","NBackPStim","NBackPCResp"]);
+
+NBackData = renamevars(NBackData,["NBackkey_resp_trials.keys","NBackkey_resp_trials.corr", ...
+    "NBackkey_resp_trials.rt","NBackblock1loop.thisN","number","correctkey"], ...
+    ["NBackResp","NBackAcc","NBackRT","NBackTrial","NBackStim","NBackCResp"]);
+
+        % BEFORE ANALYZING THE DATA, REMEMBER TO CHECK WHETHER THE COLUMN FOR
+        % ACCURACY IS CORRECT
+
+clear NBackMatch NBackPRows NBackPNum NBackPCKey NBackPMatch NBackLoopCol
+clear NBackRows
 
 %% MCT Instructions
 %  onoff_resp_instructions_2.keys	onoff_resp_instructions_2.rt, aware_resp_instructions_2.keys,
