@@ -759,7 +759,7 @@ SwitchData = [SwitchData; DummyRow];
 
 clear PDummyRow DummyRow SwitchDummyData SwitchPDummyData
 
-%% Symetry Span Practice
+%% Symmetry Span Practice
 % Sym
 % practicepresentedsymmstim, practicesymmcorrectresponse,
 % practicesymmresponse, practicesymmaccuracy, practiceresponse.clicked_name
@@ -781,12 +781,12 @@ clear PDummyRow DummyRow SwitchDummyData SwitchPDummyData
 % symmspanrecallploop.thisTrialN, symmspanrecallploop.thisN, symmspanrecallploop.thisIndex, 
 % symmspanrecallploop.ran, symmspanploop.thisRepN, symmspanploop.thisTrialN, 
 % symmspanploop.thisN, symmspanploop.thisIndex, symmspanploop.ran
-%% Symetry Span Stimuli
+%% Symmetry Span Stimuli
 % loopnumber (which spreadsheet was used for a series; includes recall and
 % mixed practice)
 % memnumber (number of items to recall based on loopnumber spreadsheet; includes
 % recall and mixed practice)
-%% Symetry Span Scoring
+%% Symmetry Span Scoring
 % symmetrical (is the stimulus symmetrical, also part of practice)
 % Symetry
 % presentedsymmstim (.JPG presented)
@@ -814,7 +814,7 @@ clear PDummyRow DummyRow SwitchDummyData SwitchPDummyData
 % within series to keep things in order).
 % Remove: symmspanblocksloop.thisRepN, symmspanblocksloop.thisTrialN
 % (loops of the four length conditions), symmspanblocksloop.thisIndex, symmspanblocksloop.ran
-%% Symetry Span Excess
+%% Symmetry Span Excess
 % Sym
 % symmetryloop.thisRepN, symmetryloop.thisTrialN, symmetryloop.thisN, symmetryloop.thisIndex, 
 % symmetryloop.ran
@@ -1245,38 +1245,113 @@ NBackData = NBackAllData(NBackRows,~NBackPMatch);
 
 % Practice should have 17 columns, actual should have 41 columns
 
+clear NBackPMatch* NBackDummy1Rows NBackDummy2Rows NBackTargetRows NBackRows
+
 %% Remove more extra columns for NBack
 
-            % START HERE NEXT TIME
-            
-NBackPData = NBackPData(:,~ismember(NBackPData.Properties.VariableNames, ["NBackpracticeloop.thisRepN", ...
-    "NBackpracticeloop.thisTrialN", "NBackpracticeloop.thisIndex", "NBackpracticeloop.ran"]));
+NBackPData = NBackPData(:,~ismember(NBackPData.Properties.VariableNames,["practice1backloop.thisRepN", ...
+    "practice1backloop.thisN", "practice1backloop.thisIndex","practice1backloop.ran", "practice2backloop.thisRepN", ...
+    "practice2backloop.thisN","practice2backloop.thisIndex","practice2backloop.ran",]));
 
-NBackData = NBackData(:,~ismember(NBackData.Properties.VariableNames,["NBackblock1loop.thisRepN", ...
-    "NBackblock1loop.thisTrialN","NBackblock1loop.thisIndex","NBackblock1loop.ran"]));
+NBackData = NBackData(:,~ismember(NBackData.Properties.VariableNames,["letter","dummy1backloop.thisTrialN", ...
+    "dummy1backloop.thisN","dummy1backloop.thisIndex","dummy1backloop.ran","trials_1backloop.thisRepN", ...
+    "trials_1backloop.thisN","trials_1backloop.thisIndex","trials_1backloop.ran","dummy2backloop.thisTrialN", ...
+    "dummy2backloop.thisN","dummy2backloop.thisIndex","dummy2backloop.ran","trials_2backloop.thisRepN","trials_2backloop.thisN", ...
+    "trials_2backloop.thisIndex","trials_2backloop.ran","nbacktask.thisRepN","nbacktask.thisTrialN","nbacktask.thisN", ...
+    "nbacktask.thisIndex","nbacktask.ran"]));
 
-% 6 columns in practice and actual data
+% wild card didn't work here
 
-%% Add 1 to counters for NBack
-NBackPData.("NBackpracticeloop.thisN") = NBackPData.("NBackpracticeloop.thisN") + 1;
+% 9 columns in practice, 20 columns in actual data. (number of columns in each data set
 
-NBackData.("NBackblock1loop.thisN") = NBackData.("NBackblock1loop.thisN") + 1;
+%% Add to counters for NBack
 
-%% Rename NBack columns
-NBackPData = renamevars(NBackPData,["NBackkey_resp_practice.keys", ...
-    "NBackkey_resp_practice.corr", "NBackkey_resp_practice.rt",  ...
-    "NBackpracticeloop.thisN","number","correctkey"], ...
-    ["NBackPResp","NBackPAcc","NBackPRT","NBackPTrial","NBackPStim","NBackPCResp"]);
+% add 1 to practice counters: practice1backloop.thisTrialN, practice2backloop.thisTrialN
+% add 1 to dummy counters: dummy1backloop.thisTrialN, dummy2backloop.thisTrialN
+% add 3 to non-dummy actual task counters: trials_1backloop.thisTrialN, trials_2backloop.thisTrialN
 
-NBackData = renamevars(NBackData,["NBackkey_resp_trials.keys","NBackkey_resp_trials.corr", ...
-    "NBackkey_resp_trials.rt","NBackblock1loop.thisN","number","correctkey"], ...
-    ["NBackResp","NBackAcc","NBackRT","NBackTrial","NBackStim","NBackCResp"]);
+NBackPData.("practice1backloop.thisTrialN") = str2double(NBackPData.("practice1backloop.thisTrialN")) + 1;
+NBackPData.("practice2backloop.thisTrialN") = str2double(NBackPData.("practice2backloop.thisTrialN")) + 1;
 
-        % BEFORE ANALYZING THE DATA, REMEMBER TO CHECK WHETHER THE COLUMN FOR
-        % ACCURACY IS CORRECT
+NBackData.("dummy1backloop.thisRepN") = str2double(NBackData.("dummy1backloop.thisRepN")) + 1;
+NBackData.("dummy2backloop.thisRepN") = str2double(NBackData.("dummy2backloop.thisRepN")) + 1;
 
-clear NBackMatch NBackPRows NBackPNum NBackPCKey NBackPMatch NBackLoopCol
-clear NBackRows
+NBackData.("trials_1backloop.thisTrialN") = str2double(NBackData.("trials_1backloop.thisTrialN")) + 3;
+NBackData.("trials_2backloop.thisTrialN") = str2double(NBackData.("trials_2backloop.thisTrialN")) + 3;
+
+%% Separate NBack dummy
+           
+                    % DUMMY DATA IS BEING INCLUDED TO DO CHECKS IN CASE THE
+                    % FIRST STIMULUS IS A TARGET
+                    % Target may be indicated in a different column but
+                    % want to check if scoring is accurate.
+
+% identify dummy columns
+% practice has no dummys
+% dummys are also their own rows
+% could have done this earlier when selecting task data but had to move
+% things around anyway.
+NBackDummyRows1 = ~isnan(NBackData.("dummy1backloop.thisRepN"));
+NBackDummyRows2 = ~isnan(NBackData.("dummy2backloop.thisRepN"));
+
+NBackDummyRows = NBackDummyRows1 | NBackDummyRows2;
+
+NBackDummyCols = ~cellfun('isempty',regexp(NBackData.Properties.VariableNames,'dummy'));
+
+NBackDummy1Data = NBackData(NBackDummyRows1,:);
+NBackDummy2Data = NBackData(NBackDummyRows2,:);
+NBackData = NBackData(~NBackDummyRows,~NBackDummyCols);
+
+NBackDummyData = [NBackDummy1Data; NBackDummy2Data];
+NBackDummyData = NBackDummyData(:,NBackDummyCols);
+
+clear NBackDummyRows1 NBackDummyRows2 NBackDummyCols NBackDummyRows NBackDummy1Data NBackDummy2Data
+
+% now dummy data should have 8 columns and actual data should have 11
+
+%% Rename NBack Columns
+
+% next can rename columns, than add in corresponding dummy
+% data to a new row piece by piece, so column order will not be a problem
+
+NBackPData = renamevars(NBackPData, ["presp_1back.keys","presp_1back.corr","practice1backloop.thisTrialN", ...
+    "letter","presp_1back.rt","presp_2back.keys","presp_2back.corr","practice2backloop.thisTrialN","presp_2back.rt"], ...
+    ["NBack1PResp","NBack1PAcc","NBack1PTrial","NBackPStim","NBack1PRT","NBack2PResp","NBack2PAcc","NBack2PTrial","NBack2PRT"]);
+
+NBackData = renamevars(NBackData, ["trialletter1back","resp_1back.keys","resp_1back.corr","resp_1back.rt", ...
+    "trials_1backloop.thisTrialN","trialletter2back","resp_2back.keys","resp_2back.corr","trials_2backloop.thisTrialN", ...
+    "resp_2back.rt","target"], ...
+    ["NBack1Stim","NBack1Resp","NBack1Acc","NBack1RT","NBack1Trial","NBack2Stim","NBack2Resp","NBack2Acc","NBack2Trial", ...
+    "NBack2RT","Target"]);
+
+%% Add Dummies to nback data
+
+NBackDummyRow = NBackData(1:4,:);
+
+NBackDummyRow.("NBack1Stim") = NBackDummyData.("dummyletter1back");
+NBackDummyRow.("NBack1Resp") = NBackDummyData.("resp_dummy1back.keys");
+NBackDummyRow.("NBack1Acc") = NBackDummyData.("resp_dummy1back.corr");
+NBackDummyRow.("NBack1RT") = ["";"";"";""];
+NBackDummyRow.("NBack1Trial") = NBackDummyData.("dummy1backloop.thisRepN");
+
+NBackDummyRow.("NBack2Stim") = NBackDummyData.("dummyletter2back");
+NBackDummyRow.("NBack2Resp") = NBackDummyData.("resp_dummy2back.keys");
+NBackDummyRow.("NBack2Acc") = NBackDummyData.("resp_dummy2back.corr");
+NBackDummyRow.("NBack2RT") = ["";"";"";""];
+NBackDummyRow.("NBack2Trial") = NBackDummyData.("dummy2backloop.thisRepN");
+NBackDummyRow.("Target") = ["D";"D";"D";"D"];
+
+NBackData = [NBackData ; NBackDummyRow];
+
+            % NBACK DUMMYS MAY BE SCORED AS 0 (INCORRECT) DESPITE BEING
+            % CORRECT
+
+clear NBackDummyRow NBackDummyData
+
+
+            % REMEMBER - WITH DUMMY ROWS AT THE BOTTOM OF THE TABLE, ANY
+            % SCORING CONDITIONAL ON DUMMYS OR ON PREVIOUS TRIALS MUST
+            % REFER TO TRIAL NUMBER, NOT JUST TO THE PREVIOUS ROW
 
 %% MCT Instructions
 %  onoff_resp_instructions_2.keys	onoff_resp_instructions_2.rt, aware_resp_instructions_2.keys,
@@ -1307,7 +1382,7 @@ clear NBackRows
 %       []    []  300 0 300 0 1   []    []  ...
 % will need to find an efficient way of combineing these rows.
 %% MCT "Scoring"
-% tone_number (tome number from 1 to 25 max).
+% tone_number (tone number from 1 to 25 max).
 % probe_resp.keys (key pressed for probe intro screen)
 % probe_resp.rt (time responded to probe intro screen relative to trial start)
 % onoff_resp.keys (key pressed for on off question)
@@ -1322,3 +1397,104 @@ clear NBackRows
 % however current example data only has one probe
 %% MCT Excess
 % MCTBeatResponse (doesn't actually store anything),
+
+%% Create Separate Table for MCT
+
+% MCT can select with tone, probe, onoff, aware, intent
+% this leaves practiceloop but other tasks have this phrase in column names
+% and I'm not sure how to make it look for practiceloop* exactly
+
+ToneMatch = ~cellfun('isempty', regexp(rawdata.Properties.VariableNames, 'tone'));
+ToneData = rawdata(:,rawdata.Properties.VariableNames(ToneMatch));
+
+ProbeMatch = ~cellfun('isempty', regexp(rawdata.Properties.VariableNames, 'probe'));
+ProbeData = rawdata(:,rawdata.Properties.VariableNames(ProbeMatch));
+
+OnOffMatch = ~cellfun('isempty', regexp(rawdata.Properties.VariableNames, 'onoff'));
+OnOffData = rawdata(:,rawdata.Properties.VariableNames(OnOffMatch));
+
+AwareMatch = ~cellfun('isempty', regexp(rawdata.Properties.VariableNames, 'aware'));
+AwareData = rawdata(:,rawdata.Properties.VariableNames(AwareMatch));
+
+IntentMatch = ~cellfun('isempty', regexp(rawdata.Properties.VariableNames, 'intent'));
+IntentData = rawdata(:,rawdata.Properties.VariableNames(IntentMatch));
+
+% combine
+
+MCTMatch = [ToneMatch | ProbeMatch | OnOffMatch | AwareMatch | IntentMatch];
+MCTAllData = rawdata(:,rawdata.Properties.VariableNames(MCTMatch));
+
+clear *Match ToneData ProbeData OnOffData AwareData IntentData
+
+% add extra columns
+MCTAllData.("practiceloop.thisRepN") = rawdata.("practiceloop.thisRepN");
+MCTAllData.("practiceloop.thisTrialN") = rawdata.("practiceloop.thisTrialN");
+MCTAllData.("practiceloop.thisN") = rawdata.("practiceloop.thisN");
+MCTAllData.("practiceloop.thisIndex") = rawdata.("practiceloop.thisIndex");
+MCTAllData.("practiceloop.ran") = rawdata.("practiceloop.ran");
+
+%% Separate practice from task for MCT
+
+MCTPToneRows = ~cellfun('isempty',MCTAllData.("practiceloop.ran"));
+% but need to include the probe row too.
+% and which columns are present depends on if they make an error during the
+% practice
+if isempty(find(strcmp("ifnoprobepracticeloop.ran",MCTAllData.Properties.VariableNames)))
+    % if there are no columns with this name
+    MCTPProbeRow = ~cellfun('isempty',MCTAllData.("practiceprobeloop.ran"));
+else
+    MCTPProbeRow = ~cellfun('isempty',MCTAllData.("ifnoprobepracticeloop.ran"));
+end
+% could probably nest this to rename the practice probe columns, but that
+% would break the pattern of organization here.
+
+MCTPRows = MCTPToneRows | MCTPProbeRow;
+
+
+MCTPData = MCTAllData(MCTPRows,:);
+
+% But this practice includes the instructions practice probes...
+
+            % START FROM HERE
+
+MCTPData(:,all(ismissing(MCTPData))) = [];
+% clears all full empty oclumns so no extra columns in the practice.
+
+clear MCTPRows
+
+% Actual task data has two dummy rows before the 1-back and 2-back tasks
+% could I just get not the columns in the practice data?
+% Can't find a good way to do this.
+
+MCTPMatch1 = ~cellfun('isempty', regexp(MCTAllData.Properties.VariableNames, 'practice'));
+MCTPMatch2 = ~cellfun('isempty', regexp(MCTAllData.Properties.VariableNames, 'presp'));
+
+MCTPMatch = MCTPMatch1 | MCTPMatch2;
+
+% combine rows where dummy1backloop.ran, dummy2backloop.ran, and target are
+% empty
+
+MCTDummy1Rows = ~cellfun('isempty',MCTAllData.("dummy1backloop.ran"));
+MCTDummy2Rows = ~cellfun('isempty',MCTAllData.("dummy2backloop.ran"));
+MCTTargetRows = ~cellfun('isempty',MCTAllData.("target"));
+
+MCTRows = MCTDummy1Rows | MCTDummy2Rows | MCTTargetRows;
+
+MCTData = MCTAllData(MCTRows,~MCTPMatch);
+
+% Can't just remove all empty variables because they should not respond to
+% the dummys but might
+
+% Practice should have 17 columns, actual should have 41 columns
+
+clear MCTPMatch* MCTDummy1Rows MCTDummy2Rows MCTTargetRows MCTRows
+
+
+
+%% Remove extra columns/rows for MCT
+
+%% Add to counters for MCT
+
+%% Rename columns for MCT
+
+%% re-align trials with thought probes
