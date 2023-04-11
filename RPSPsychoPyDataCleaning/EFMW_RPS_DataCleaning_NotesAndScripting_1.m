@@ -2,7 +2,7 @@
 
 % Chelsie H.
 % Started: November 8, 2022
-% Last updated: March 28, 2023
+% Last updated: April 11, 2023
 
 % Purpose: Remove Irrelevant Data for Later Scoring
 
@@ -14,6 +14,9 @@
 % create a separate file to store task/system information for all
 % participants
 % create script for checking if psychopy scoring is correct
+
+        % SCRIPT CURRENTLY SWITCHES BETWEEN LOGIC ARRAYS INDICATING COLUMN
+        % BEING LABELED 'MATCH' AND 'COL'
 
 % Example file for raw data: ExampleRPSPsychoPyData.cxv
 % Example file for what cleaned data should look like: ExampleRPSGoalCleanedData.xlsx
@@ -52,9 +55,11 @@
 
 clc
 clear
-% on laptop maindir = ('C:/Users/chels/OneDrive - University of Calgary/1_PhD_Project/Scripting/RPSPsychoPyDataCleaning/');
+% on laptop 
+maindir = ('C:/Users/chels/OneDrive - University of Calgary/1_PhD_Project/Scripting/RPSPsychoPyDataCleaning/');
+
 % on desktop 
-maindir = ('C:/Users/chish/OneDrive - University of Calgary/1_PhD_Project/Scripting/RPSPsychoPyDataCleaning/');
+% maindir = ('C:/Users/chish/OneDrive - University of Calgary/1_PhD_Project/Scripting/RPSPsychoPyDataCleaning/');
 
 
 %% Load in Data
@@ -514,40 +519,20 @@ clear SARTRows
 % to get minimal overlap but get all columns, could do: shape, colour, mixed,
 % practiceswitch...
 
+% some of these can grouped maybe to reduce single calls?
+
 ShapeMatch = ~cellfun('isempty', regexp(rawdata.Properties.VariableNames, 'shape'));
-ShapeData = rawdata(:,rawdata.Properties.VariableNames(ShapeMatch));
-
 ColourMatch = ~cellfun('isempty', regexp(rawdata.Properties.VariableNames, 'colour'));
-ColourData = rawdata(:,rawdata.Properties.VariableNames(ColourMatch));
-
 MixedMatch = ~cellfun('isempty', regexp(rawdata.Properties.VariableNames, 'mix'));
-MixedData = rawdata(:,rawdata.Properties.VariableNames(MixedMatch));
-
 PracticeSwitchMatch = ~cellfun('isempty', regexp(rawdata.Properties.VariableNames, 'practiceswitch'));
-PracticeSwitchData = rawdata(:,rawdata.Properties.VariableNames(PracticeSwitchMatch));
+SwitchCondMatch = ~cellfun('isempty', regexp(rawdata.Properties.VariableNames, 'switchcond'));
+
+SwitchAllCols = ShapeMatch | ColourMatch | MixedMatch | PracticeSwitchMatch | SwitchCondMatch;
+SwitchAllData = rawdata(:,SwitchAllCols);
 
 %then add switchcond, dummyswitchcondition, switchcondition,
 %dummystimuluspresented, stimuluscondition, dummystimuluscondition, 
 % stimuluspresented, images, correct - separately
-
-% some of these can grouped maybe to reduce single calls?
-SwitchCondMatch = ~cellfun('isempty', regexp(rawdata.Properties.VariableNames, 'switchcond'));
-SwitchCondData = rawdata(:,rawdata.Properties.VariableNames(SwitchCondMatch));
-
-% but 'colour_shape_switch_task...' columns will overlap
-
-% combine data
-% error because duplicate table variable name
-
-OverLapMatch = ~cellfun('isempty', regexp(ShapeData.Properties.VariableNames, 'colour'));
-ShapeData = ShapeData(:,ShapeData.Properties.VariableNames(~OverLapMatch));
-OverLapMatch2 = ~cellfun('isempty', regexp(SwitchCondData.Properties.VariableNames, 'practiceswitch'));
-SwitchCondData = SwitchCondData(:,SwitchCondData.Properties.VariableNames(~OverLapMatch2));
-
-% duplicate dummypracticeswitchcondition
-
-SwitchAllData = [ShapeData ColourData MixedData PracticeSwitchData SwitchCondData];
-
 % add extra columns
 SwitchAllData.("dummystimuluspresented") = rawdata.("dummystimuluspresented");
 SwitchAllData.("stimuluscondition") = rawdata.("stimuluscondition");
@@ -560,9 +545,7 @@ SwitchAllData.("correct") = rawdata.("correct");
 SwitchAllData.("correctresponse") = rawdata.("correctresponse");
 SwitchAllData.("dummycorrectresponse") = rawdata.("dummycorrectresponse");
 
-clear ShapeMatch ShapeData ColourMatch ColourData PracticeSwitchmatch PracticeSwitchData
-clear SwitchCondMatch SwitchCondData OverLapMatch OverLapMatch2
-clear MixedMatch MixedData PracticeSwitchMatch PracticeSwitchData
+clear ShapeMatch ColourMatch PracticeSwitchmatch SwitchCondMatch MixedMatch SwitchAllCols
 %% Separating practice from task for Switch
 
 % for the practice columns, there is data only during the practice while
@@ -838,23 +821,13 @@ clear PDummyRow DummyRow SwitchDummyData SwitchPDummyData
 % and requires adding: practicerecallaccuracy, loopnumber, memnumber, recallaccuracy
 
 SymMatch = ~cellfun('isempty', regexp(rawdata.Properties.VariableNames, 'symm'));
-SymData = rawdata(:,rawdata.Properties.VariableNames(SymMatch));
-
 SquareMatch = ~cellfun('isempty', regexp(rawdata.Properties.VariableNames, 'square'));
-SquareData = rawdata(:,rawdata.Properties.VariableNames(SquareMatch));
-
 PRespMatch = ~cellfun('isempty', regexp(rawdata.Properties.VariableNames, 'practiceresponse'));
-PRespData = rawdata(:,rawdata.Properties.VariableNames(PRespMatch));
-
 RecallLoopMatch = ~cellfun('isempty', regexp(rawdata.Properties.VariableNames, 'recallloop.'));
-RecallLoopData = rawdata(:,rawdata.Properties.VariableNames(RecallLoopMatch));
-
-OverLapMatch3 = ~cellfun('isempty', regexp(SquareData.Properties.VariableNames, 'symmpracticesquareloop'));
-SquareData = SquareData(:,SquareData.Properties.VariableNames(~OverLapMatch3));
 
 % combine
-
-SymSpanAllData = [SymData SquareData PRespData RecallLoopData];
+SymSpanAllCols = SymMatch | SquareMatch | PRespMatch | RecallLoopMatch;
+SymSpanAllData = rawdata(:,SymSpanAllCols);
 
 % add extra columns
 SymSpanAllData.("practicerecallaccuracy") = rawdata.("practicerecallaccuracy");
@@ -862,7 +835,7 @@ SymSpanAllData.("loopnumber") = rawdata.("loopnumber");
 SymSpanAllData.("memnumber") = rawdata.("memnumber");
 SymSpanAllData.("recallaccuracy") = rawdata.("recallaccuracy");
 
-clear SymMatch SymData SquareMatch SquareData PRespMatch PRespData RecallLoopMatch RecallLoopData OverLapMatch3
+clear SymMatch SquareMatch PRespMatch RecallLoopMatch SymSpanAllCols
 
 %% Separating practice from task for SymSpan
 
@@ -1405,26 +1378,21 @@ clear NBackDummyRow NBackDummyData
 % and I'm not sure how to make it look for practiceloop* exactly
 
 ToneMatch = ~cellfun('isempty', regexp(rawdata.Properties.VariableNames, 'tone'));
-ToneData = rawdata(:,rawdata.Properties.VariableNames(ToneMatch));
 
 ProbeMatch = ~cellfun('isempty', regexp(rawdata.Properties.VariableNames, 'probe'));
-ProbeData = rawdata(:,rawdata.Properties.VariableNames(ProbeMatch));
 
 OnOffMatch = ~cellfun('isempty', regexp(rawdata.Properties.VariableNames, 'onoff'));
-OnOffData = rawdata(:,rawdata.Properties.VariableNames(OnOffMatch));
 
 AwareMatch = ~cellfun('isempty', regexp(rawdata.Properties.VariableNames, 'aware'));
-AwareData = rawdata(:,rawdata.Properties.VariableNames(AwareMatch));
 
 IntentMatch = ~cellfun('isempty', regexp(rawdata.Properties.VariableNames, 'intent'));
-IntentData = rawdata(:,rawdata.Properties.VariableNames(IntentMatch));
 
 % combine
 
 MCTMatch = [ToneMatch | ProbeMatch | OnOffMatch | AwareMatch | IntentMatch];
 MCTAllData = rawdata(:,rawdata.Properties.VariableNames(MCTMatch));
 
-clear *Match ToneData ProbeData OnOffData AwareData IntentData
+clear *Match
 
 % add extra columns
 MCTAllData.("practiceloop.thisRepN") = rawdata.("practiceloop.thisRepN");
@@ -1453,41 +1421,26 @@ MCTPRows = MCTPToneRows | MCTPProbeRow;
 
 MCTPData = MCTAllData(MCTPRows,:);
 
-% But this practice includes the instructions practice probes...
-
-            % START FROM HERE
 
 MCTPData(:,all(ismissing(MCTPData))) = [];
-% clears all full empty oclumns so no extra columns in the practice.
+% clears all full empty columns so no extra columns in the practice.
 
-clear MCTPRows
+clear MCTPRows MCTPProbeRow MCTPToneRows
 
-% Actual task data has two dummy rows before the 1-back and 2-back tasks
-% could I just get not the columns in the practice data?
-% Can't find a good way to do this.
+% actual task
+MCTToneRows = ~cellfun('isempty',MCTAllData.("toneloop1.ran"));
+MCTProbeRows = ~cellfun('isempty',MCTAllData.("probeloop1.ran"));
 
-MCTPMatch1 = ~cellfun('isempty', regexp(MCTAllData.Properties.VariableNames, 'practice'));
-MCTPMatch2 = ~cellfun('isempty', regexp(MCTAllData.Properties.VariableNames, 'presp'));
+MCTRows = MCTToneRows | MCTProbeRows;
 
-MCTPMatch = MCTPMatch1 | MCTPMatch2;
+test = MCTAllData(MCTRows,:);
 
-% combine rows where dummy1backloop.ran, dummy2backloop.ran, and target are
-% empty
+clear MCTToneRows MCTProbeRows MCTRows
 
-MCTDummy1Rows = ~cellfun('isempty',MCTAllData.("dummy1backloop.ran"));
-MCTDummy2Rows = ~cellfun('isempty',MCTAllData.("dummy2backloop.ran"));
-MCTTargetRows = ~cellfun('isempty',MCTAllData.("target"));
+% can't just clear all empty columns if the participant got no probes.
+% can grab practice only columns with 'practice', 'resp_', 'response_'
 
-MCTRows = MCTDummy1Rows | MCTDummy2Rows | MCTTargetRows;
 
-MCTData = MCTAllData(MCTRows,~MCTPMatch);
-
-% Can't just remove all empty variables because they should not respond to
-% the dummys but might
-
-% Practice should have 17 columns, actual should have 41 columns
-
-clear MCTPMatch* MCTDummy1Rows MCTDummy2Rows MCTTargetRows MCTRows
 
 
 
