@@ -714,7 +714,7 @@ SwitchData.("SwitchTrial") = str2double(SwitchData.("SwitchTrial")) + 2; % plus 
 % it should always be) can duplicate that into a new table and refill the
 % rows
 
-PDummyRow = SwitchPData(nrows(SwitchPData),:);
+PDummyRow = SwitchPData(height(SwitchPData),:);
 
 PDummyRow.("SwitchPRule") = SwitchPDummyData.("dummypracticeswitchstimuluscondition");
 PDummyRow.("SwitchPCond") = SwitchPDummyData.("dummypracticeswitchcondition");
@@ -727,7 +727,7 @@ PDummyRow.("SwitchPTrial") = 1;
 
 SwitchPData = [SwitchPData ; PDummyRow];
 
-DummyRow = SwitchData(nrows(SwitchData),:);
+DummyRow = SwitchData(height(SwitchData),:);
 
 DummyRow.("SwitchRule") = SwitchDummyData.("dummystimuluscondition");
 DummyRow.("SwitchCond") = SwitchDummyData.("dummyswitchcondition");
@@ -910,19 +910,19 @@ clear SymSpanRows SymSpanPMatch
 % on it's own, strcmp isn't great because it makes a logical array checking
 % every variable name.
 
-if isempty(find(strcmp("practiceresponse.time",SymSpanPData.Properties.VariableNames)))
+if isempty(find(strcmp("practiceresponse.time",SymSpanPData.Properties.VariableNames),1))
     % if there are no columns with this name
     
-    SymSpanPData.("practiceresponse.time") = strings(nrows(SymSpanPData),1);
-    SymSpanPData.("square_resp_2.time") = strings(nrows(SymSpanPData),1);
+    SymSpanPData.("practiceresponse.time") = strings(height(SymSpanPData),1);
+    SymSpanPData.("square_resp_2.time") = strings(height(SymSpanPData),1);
     % create that column
 end
 
-if isempty(find(strcmp("symmresponseclick.time",SymSpanData.Properties.VariableNames)))
+if isempty(find(strcmp("symmresponseclick.time",SymSpanData.Properties.VariableNames),1))
     % if there are no columns with this name
     
-    SymSpanData.("symmresponseclick.time") = strings(nrows(SymSpanData),1);
-    SymSpanData.("square_resp.time") = strings(nrows(SymSpanData),1);
+    SymSpanData.("symmresponseclick.time") = strings(height(SymSpanData),1);
+    SymSpanData.("square_resp.time") = strings(height(SymSpanData),1);
     % create that column
 end
 
@@ -1061,7 +1061,7 @@ SymSpanData.("SymSpanMixSeriesCond") = fillmissing(SymSpanData.("SymSpanMixSerie
 SymSpanPData.("SymSpanPRecSeriesCond") = str2double(SymSpanPData.("SymSpanPRecSeriesCond"));
 
 % for rows with data for SymSpanPRecResp (and SymSpanPRecAcc)
-for SymPRespRow = 1:nrows(SymSpanPData)
+for SymPRespRow = 1:height(SymSpanPData)
     if ~cellfun('isempty',SymSpanPData.("SymSpanPRecResp")(SymPRespRow))
         % find the SymSpanPRecSeriesCond number
         PRowsUp = SymSpanPData.("SymSpanPRecSeriesCond")(SymPRespRow);
@@ -1082,7 +1082,7 @@ clear SymPRespRow PRowsUp
 
 SymSpanData.("SymSpanMixSeriesCond") = str2double(SymSpanData.("SymSpanMixSeriesCond"));
 
-for SymRespRow = 1:nrows(SymSpanData)
+for SymRespRow = 1:height(SymSpanData)
     if ~cellfun('isempty',SymSpanData.("SymSpanMixRecResp")(SymRespRow))
         RowsUp = SymSpanData.("SymSpanMixSeriesCond")(SymRespRow);
         SymSpanData.("SymSpanMixRecResp")(SymRespRow-RowsUp) = SymSpanData.("SymSpanMixRecResp")(SymRespRow);
@@ -1378,18 +1378,14 @@ clear NBackDummyRow NBackDummyData
 % and I'm not sure how to make it look for practiceloop* exactly
 
 ToneMatch = ~cellfun('isempty', regexp(rawdata.Properties.VariableNames, 'tone'));
-
 ProbeMatch = ~cellfun('isempty', regexp(rawdata.Properties.VariableNames, 'probe'));
-
 OnOffMatch = ~cellfun('isempty', regexp(rawdata.Properties.VariableNames, 'onoff'));
-
 AwareMatch = ~cellfun('isempty', regexp(rawdata.Properties.VariableNames, 'aware'));
-
 IntentMatch = ~cellfun('isempty', regexp(rawdata.Properties.VariableNames, 'intent'));
 
 % combine
 
-MCTMatch = [ToneMatch | ProbeMatch | OnOffMatch | AwareMatch | IntentMatch];
+MCTMatch = ToneMatch | ProbeMatch | OnOffMatch | AwareMatch | IntentMatch;
 MCTAllData = rawdata(:,rawdata.Properties.VariableNames(MCTMatch));
 
 clear *Match
@@ -1401,13 +1397,13 @@ MCTAllData.("practiceloop.thisN") = rawdata.("practiceloop.thisN");
 MCTAllData.("practiceloop.thisIndex") = rawdata.("practiceloop.thisIndex");
 MCTAllData.("practiceloop.ran") = rawdata.("practiceloop.ran");
 
-%% Separate practice from task for MCT
+%% Separate practice from task for MCT and remove some extra columns and rows
 
 MCTPToneRows = ~cellfun('isempty',MCTAllData.("practiceloop.ran"));
 % but need to include the probe row too.
 % and which columns are present depends on if they make an error during the
 % practice
-if isempty(find(strcmp("ifnoprobepracticeloop.ran",MCTAllData.Properties.VariableNames)))
+if isempty(find(strcmp("ifnoprobepracticeloop.ran",MCTAllData.Properties.VariableNames),1))
     % if there are no columns with this name
     MCTPProbeRow = ~cellfun('isempty',MCTAllData.("practiceprobeloop.ran"));
 else
@@ -1417,7 +1413,6 @@ end
 % would break the pattern of organization here.
 
 MCTPRows = MCTPToneRows | MCTPProbeRow;
-
 
 MCTPData = MCTAllData(MCTPRows,:);
 
@@ -1433,21 +1428,152 @@ MCTProbeRows = ~cellfun('isempty',MCTAllData.("probeloop1.ran"));
 
 MCTRows = MCTToneRows | MCTProbeRows;
 
-test = MCTAllData(MCTRows,:);
-
-clear MCTToneRows MCTProbeRows MCTRows
-
 % can't just clear all empty columns if the participant got no probes.
 % can grab practice only columns with 'practice', 'resp_', 'response_'
 
+PracticeCols = ~cellfun('isempty',regexp(MCTAllData.Properties.VariableNames,'practice'));
+PRespCols = ~cellfun('isempty',regexp(MCTAllData.Properties.VariableNames,'resp_'));
+PResponseCols = ~cellfun('isempty',regexp(MCTAllData.Properties.VariableNames,'response_'));
+ProbeLoopCols = ~cellfun('isempty',regexp(MCTAllData.Properties.VariableNames,'probeloop1'));
 
+ExtraMCTCols = PracticeCols | PRespCols | PResponseCols | ProbeLoopCols;
 
+MCTData = MCTAllData(MCTRows,~ExtraMCTCols);
 
+clear *Rows *Cols
 
-%% Remove extra columns/rows for MCT
-
-%% Add to counters for MCT
+% practice should have 29 columns, some of which need to be removed
+% actual data should have 17 columns.
 
 %% Rename columns for MCT
 
-%% re-align trials with thought probes
+if isempty(find(strcmp("ifnoprobepracticeloop.ran",MCTPData.Properties.VariableNames),1))
+    % if there are no columns with this name
+    % then they had a probe during practice
+    MCTPData = renamevars(MCTPData, ["probe_resp_practice.keys","probe_resp_practice.rt", ...
+        "onoff_resp_2.keys","onoff_resp_2.rt","aware_resp_2.keys","aware_resp_2.rt", ...
+        "intent_response_2.keys","intent_response_2.rt"], ...
+    ["MCTPProbeIntroResp","MCTPProbeIntroRT","MCTPProbeOnOffResp","MCTPProbeOnOffRT", ...
+    "MCTPProbeAwareResp","MCTPProbeAwareRT","MCTPProbeIntentResp","MCTPProbeIntentRT"]);
+else
+    MCTPData = renamevars(MCTPData, ["probe_resp_practice_2.keys","probe_resp_practice_2.rt", ...
+        "onoff_resp_2.keys","onoff_resp_2.rt","aware_resp_2.keys","aware_resp_2.rt", ...
+        "intent_response_3.keys","intent_response_3.rt"], ...
+    ["MCTPProbeIntroResp","MCTPProbeIntroRT","MCTPProbeOnOffResp","MCTPProbeOnOffRT", ...
+    "MCTPProbeAwareResp","MCTPProbeAwareRT","MCTPProbeIntentResp","MCTPProbeIntentRT"]);
+end
+
+MCTPData = renamevars(MCTPData, ["tone_number","tone_practicetrial_resp.keys", ...
+    "tone_practicetrial_resp.rt","practiceloop.thisRepN","probetype","onoff_resp_instructions_2.keys", ...
+    "onoff_resp_instructions_2.rt","aware_resp_instructions_2.keys","aware_resp_instructions_2.rt", ...
+    "intent_response_instructions_2.keys", "intent_response_instructions_2.rt"], ...
+    ["MCTPToneNum","MCTPResp","MCTPRT","MCTPTrial","MCTPProbeType","MCTInstProbeOnOffResp", ...
+    "MCTInstProbeOnOffRT", "MCTInstProbeAwareResp","MCTInstProbeAwareRT", ...
+    "MCTInstProbeIntentResp","MCTInstProbeIntentRT"]);
+
+MCTData = renamevars(MCTData, ["tone_number","tone_trial_resp.keys","tone_trial_resp.rt","" + ...
+    "toneloop1.thisRepN","probetype","probe_resp.keys","probe_resp.rt","onoff_resp.keys", ...
+    "onoff_resp.rt","aware_resp.keys","aware_resp.rt","intent_response.keys","intent_response.rt"], ...
+    ["MCTToneNum","MCTResp","MCTRT","MCTTrial","MCTProbeType","MCTProbeIntroResp", ...
+    "MCTProbeIntroRT","MCTProbeOnOffResp","MCTProbeOnOffRT","MCTProbeAwareResp", ...
+    "MCTProbeAwareRT","MCTProbeIntentResp","MCTProbeIntentRT"]);
+
+
+%% Remove additional extra columns for MCT
+
+% just removing anything with 'loop' still in the name
+
+MCTPLoopCols = ~cellfun('isempty',regexp(MCTPData.Properties.VariableNames,'loop'));
+MCTLoopCols = ~cellfun('isempty',regexp(MCTData.Properties.VariableNames,'loop'));
+
+MCTPData = MCTPData(:,~MCTPLoopCols);
+MCTData = MCTData(:,~MCTLoopCols);
+
+clear *LoopCols
+
+% Practice should have 19 columns
+% Practice should have 13 columns
+
+%% re-align trials with thought probes in practice
+
+% could use tone_number to find the rows that need shifting up or down.
+% when tone_number is empty, need to shift toneloop1 columns up to match
+% the row above the  empty cell...
+% for practice, should only do this when they hit a probe, and not do this
+% for the practice probe for those that don't make errors.
+
+% in practice data after clearing all extra rows and columns so far
+% the probe is in the same row as the corresponding MCTPToneNum, MCTPResp,
+% MCTPRT, and MCTProbeType
+% but MCTPTrial is misaligned
+
+% THIS LOOP ISN'T WORKING FOR SOME REASON, EVEN THOUGH THE
+% PROBE TYPE IS 0 IT'S STILL MOVING THE VALUES OF TRIAL UP AND
+% WRITING 'ERASE' IN 
+
+%for MCTPRNum = 1:(height(MCTPData))
+    % going through row by row
+    % can't just do number of rows here though because that changes...
+    %if ~(str2double(MCTPData.("MCTPProbeType")(MCTPRNum)) == 0)
+        % ismember(MCTPData.("MCTPProbeType")(MCTPRNum), '0')
+        % if it is a practice probe for those who don't make mistakes, move
+        % on.
+        % if they got a probe for making a mistake
+        % move the next value of MCTPTrial up to the same row, and delete
+        % the row that contained the MCTPTrial originally
+        %test = 'true';
+        %test1 = 'true';
+        %test3.("MCTPTrial")(MCTPRNum) = MCTPData.("MCTPTrial")(MCTPRNum +1);
+        %test3.("MCTPTrial")(MCTPRNum +1) = {'erase'};
+    %else
+        %test = 'false';
+        %test1 = 'still false';
+        %test3.("MCTPTrial")(MCTPRNum) = MCTPData.("MCTPTrial")(MCTPRNum);
+    %end
+%end
+
+%clear MCTPRNum
+
+% THIS LOOP SEEMS TO WORK FOR SOME REASON
+
+if isempty(find((ismember(MCTPData.("MCTPProbeType"), '0')),1))
+    % if there is no practice probe in the data
+    MCTPProbeRows = find(~cellfun('isempty',MCTPData.("MCTPProbeType")));
+    for MCTPProbeRIdx = 1:height(MCTPProbeRows)
+        MCTPProbeRowNum = MCTProbeRows(MCTPProbeRIdx);
+        % not sure if this will be 'height' or not
+        MCTPData.("MCTPTrial")(MCTPProbeRowNum) = MCTPData.("MCTPTrial")(MCTPProbeRowNum +1);
+        MCTPData.("MCTPTrial")(MCTPProbeRowNum +1) = {'erase'};
+    end
+end
+
+clear MCTPProbeRows MCTPProbeRIdx MCTPProbeRowNum
+
+% check if there are probes in the data
+if ~isempty(MCTData.("MCTProbeType"))
+    MCTProbeRows = find(~cellfun('isempty',MCTData.("MCTProbeType")));
+    for MCTProbeRIdx = 1:height(MCTProbeRows)
+        MCTProbeRowNum = MCTProbeRows(MCTProbeRIdx);
+        MCTData.("MCTTrial")(MCTProbeRowNum) = MCTData.("MCTTrial")(MCTProbeRowNum + 1);
+        MCTData.("MCTTrial")(MCTProbeRowNum + 1) = {'erase'};
+    end
+
+end
+
+        % START HERE NEXT TIME, NEED TO REMOVE ROWS WITH 'ERASE' IN
+        % MCTTRIAL
+
+
+%% re-align trials with thought probes in actual task
+% actually should be similar to the practice.
+for MCTRNum = 1:(height(MCTData))
+    MCTData.("MCTTrial")(MCTRNum) = MCTData.("MCTTrial")(MCTRNum + 1);
+    MCTData(MCTRNum + 1 ,:) = [];
+end
+
+%% Add to counters for MCT
+% without moving the probe rows in line, there are empty parts of the trai
+% lcounters
+MCTPData.("MCTPTrial") = str2double(NBackData.("MCTPTrial")) + 1;
+
+%% Create new variable(s) for thought type?
