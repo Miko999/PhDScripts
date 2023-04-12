@@ -1560,20 +1560,28 @@ if ~isempty(MCTData.("MCTProbeType"))
 
 end
 
-        % START HERE NEXT TIME, NEED TO REMOVE ROWS WITH 'ERASE' IN
-        % MCTTRIAL
+clear MCTProbeRows MCTProbeRIdx MCTProbeRowNum
 
+%% Remove extra rows from trial number
 
-%% re-align trials with thought probes in actual task
-% actually should be similar to the practice.
-for MCTRNum = 1:(height(MCTData))
-    MCTData.("MCTTrial")(MCTRNum) = MCTData.("MCTTrial")(MCTRNum + 1);
-    MCTData(MCTRNum + 1 ,:) = [];
-end
+MCTPEraseRows = strcmp('erase',MCTPData.("MCTPTrial"));
+MCTPData = MCTPData(~MCTPEraseRows,:);
+
+MCTEraseRows = strcmp('erase',MCTData.("MCTTrial"));
+MCTData = MCTData(~MCTEraseRows,:);
+
+clear MCTPEraseRows MCTEraswRows
+
 
 %% Add to counters for MCT
-% without moving the probe rows in line, there are empty parts of the trai
-% lcounters
-MCTPData.("MCTPTrial") = str2double(NBackData.("MCTPTrial")) + 1;
 
-%% Create new variable(s) for thought type?
+MCTPData.("MCTPTrial") = str2double(MCTPData.("MCTPTrial")) + 1;
+MCTData.("MCTTrial") = str2double(MCTData.("MCTTrial")) + 1;
+
+%% Relabel Probe and Response Types
+
+
+            %START HERE NEXT TIME
+
+% the following didn't work
+% test = strrep(MCTData.("MCTProbeType"),'1','miscount');
