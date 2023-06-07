@@ -2,37 +2,37 @@
 
 % Chelsie H.
 % Started: November 8, 2022
-% Last updated: April 11, 2023
+% Last updated: April 13, 2023
 
-% Purpose: Remove Irrelevant Data for Later Scoring
+% Purpose: Remove irrelevant data from raw data, save this cleaned data,
+% calculate scores or variables of interest, save the scores.
 
-% to do:
-% remove columns from "practice" parts - create a separate file for this?
-% remove any rows that only have practice data
-% remove columns for randomizer variables
-% create a separate file for just practice stuff
-% create a separate file to store task/system information for all
-% participants
-% create script for checking if psychopy scoring is correct
-
-        % SCRIPT CURRENTLY SWITCHES BETWEEN LOGIC ARRAYS INDICATING COLUMN
-        % BEING LABELED 'MATCH' AND 'COL'
-
-% Example file for raw data: ExampleRPSPsychoPyData.cxv
-% Example file for what cleaned data should look like: ExampleRPSGoalCleanedData.xlsx
-% separate sheets for each part of the data.
 % File with column key and content information is
 % PsychoPyData_ColumnKey.xlsx
 
-% raw file names are usually in this format: PARTICIPANT_EFMW_Tasks_RPS_..
-% followed by digits for YYYY-MM-DD_HHhMM.SS.MsMsMs (the h is 'h')
+% Example data files: PARTICIPANT_EFMW_Tasks_RPS_ExampleFewErrors.csv and 
+% PARTICIPANT_EFMW_Tasks_RPS_ExampleMCTErrors.csv
+
+% to do:
+% CORRECT REACTION TIMES BY STIMULUS ONSET!
+% Edit text sent to command window to grab participant ID or file name
+% Create script to score tasks
+% Combine spreadsheet with scores with spreadsheet of questionnaire scores
+% and demographics
+
+% Future ideas:
+% Could add something such that if the participant ID matches files in the
+% cleaned data, the script should stop.
+
+% Raw file names are usually in this format: PARTICIPANT_EFMW_Tasks_RPS_..
+% followed by digits for YYYY-MM-DD_HHhMM.SS.MsMsMs (the h is 'h', Ms are millisecond digits)
 
 % THIS SCRIPT IS NOT FOR REMOVING TRIALS WHERE THERE WERE ISSUES DURING
 % DATA COLLECTION OR DUMMY TRIALS
 
 % Note that because the data is being created through a python program,
 % automatic counters will always start at '0' for the first item.
-% 1 will have to be added to all counters to make this more intuitive in
+% 1 has been added to all counters to make this more intuitive in
 % cleaned data.
 
 %% Notes
@@ -42,11 +42,31 @@
 % they did not response and no data was recorded.
 
 %% Output Files
-% ParticipantID_psychopy_cleaned (for cleaned data of tasks only)
-% ParticipantID_psychopy_practice
+% ParticipantID_Task (for cleaned data of tasks only)
+% ParticipantID_TaskP (for cleaned practice data)
 % These will be made within matlab for each participant
-% RPS_PsychoPyTaskInfo (will be RAD instead of RPS for RAD data)
-% RPS_PsychoPyTaskInfo will be made externally
+% RPS_PsychoPyTaskInfo (will be RAD instead of RPS for RAD data; 
+% made externally and added to within matlab)
+% RPS_Task_Scores (will be RAD instead of RPS for RAD data; 
+% made externally and added to within matlab)
+
+%% Versions and Packages
+
+% Main PC: Matlab R2021b update 6
+% Packages: Stats and machine learning toolbox version 12.2, simulink
+% version 10.4, signal processing toolbox version 8.7, image processing
+% toolbox version 11.4; FieldTrip 1.0.1.0
+
+% Laptop
+% Packages:
+
+% Surfacebook: Matlab R2021b update 6
+% Packages: Stats and Machine Learning Toolbox 10.4,
+% Simulink 10.4, Signal Processing Toolbox 8.7, Image Procesisng Toolbax 11.4, Images
+% Acquision Toolbox 6.5
+        % UPDATE STATS AND MACHINE LEARNING TOOLBOX ON SURFACEBOOK to see
+        % if this makes things work.
+
 
 %% Clear all and Select Directory
 
@@ -55,23 +75,36 @@
 
 clc
 clear
+
+fprintf('Setting directories\n')
+
 % on laptop 
-maindir = ('C:/Users/chels/OneDrive - University of Calgary/1_PhD_Project/Scripting/RPSPsychoPyDataCleaning/');
+% maindir = ('C:/Users/chels/OneDrive - University of Calgary/1_PhD_Project/Scripting/RPSPsychoPyDataCleaning/');
 
 % on desktop 
-% maindir = ('C:/Users/chish/OneDrive - University of Calgary/1_PhD_Project/Scripting/RPSPsychoPyDataCleaning/');
+maindir = ('C:/Users/chish/OneDrive - University of Calgary/1_PhD_Project/Scripting/RPSPsychoPyDataCleaning/');
 
 
 %% Load in Data
 rawdatadir = [maindir 'RawData/'];
 cleaneddatadir = [maindir 'CleanedData/'];
+cleanedpdatadir = [maindir 'CleanedPracticeData/'];
 addpath(genpath(maindir))
 
+fprintf('Collecting raw file names\n')
 
 % need to get it to find all raw files or the raw files of interest too
 filepattern = fullfile(rawdatadir, 'PARTICIPANT_EFMW_Tasks_RPS_*');
+% previous line doesn't work on the surface book (has / as \)
+% filepattern = [rawdatadir, 'PARTICIPANT_EFMW_Tasks_RPS_*'];
+
 % finds all file with the string in the beginning of the file name
 filename = dir(filepattern); 
+% previous line doesn't work on the surface book (filename is empty
+% structure)
+% filename = dir('RawData/PARTICIPANT_EFMW_Tasks_RPS');
+% neither does this one
+
 % creates an array with file names X x 1 (X = number of files with matching
 % names
 filecell = struct2cell(filename);
@@ -102,7 +135,9 @@ filenamestring = strrep(filenamestring,'''','');
 % [~,~,raw] = readmatrix([rawdatadir 'ExampleRPSPsychoPyData_WithMCTErrors.csv']);
 % doesn't like the number of output arguments here
 
-            % fprintf('\n******\nLoading in raw data file %d\n******\n\n', (whatever the looping variable is called);
+fprintf('Loading in raw data\n')
+
+            % fprintf('\n******\nLoading in raw data file %d\n******\n\n', (whatever the looping variable is called));
 
 opts = detectImportOptions([rawdatadir filenamestring]);
 opts.VariableNamingRule = 'preserve'; % need to set to preserve or it changes variable names ot match matlab syntax
@@ -238,6 +273,7 @@ clear opts
 % concatonate things into a variable name e.g., NSWcsSYsrSAN
 
 %% To get task order
+fprintf('Determining task order\n')
 % Create TaskOrder variable to hold letters
 TaskOrder = [];
     % find EFtasksrandomizerloop.thisN
@@ -325,9 +361,10 @@ clear TaskRandCol TaskRandIdx TaskRandIdxNum TaskRandRow SymSubTaskRandRow
 clear SymSubTaskRandIdxNum SwitchSubTaskRandRow SwitchSubTaskRandIdxNum
 clear psychopyversion OS frameRate TaskOrder NewTaskInfo TaskInfo
 
-        % WILL NEED ID DATE EXPNAME FOR NAMING THE OUTPUT FILES
+fprintf('Saving task info\n')
             
 %% SART Practice:
+fprintf('Processing SART data\n')
 % SARTkey_resp_practice.keys, SARTkey_resp_practice.corr,
 % SARTpracticeloop.thisRepN, SARTpracticeloop.thisTrialN,
 % SARTpracticeloop.thisN, SARTpracticeloop.thisIndex, SARTpracticeloop.ran
@@ -356,8 +393,8 @@ clear psychopyversion OS frameRate TaskOrder NewTaskInfo TaskInfo
 %T(:,ismember(T.Properties.VariableNames, {""list of variables""})) this
 % doesn't work with wild cards
 
-SARTMatch = ~cellfun('isempty', regexp(rawdata.Properties.VariableNames, 'SART'));
-SARTAllData = rawdata(:,rawdata.Properties.VariableNames(SARTMatch));
+SARTCols = ~cellfun('isempty', regexp(rawdata.Properties.VariableNames, 'SART'));
+SARTAllData = rawdata(:,rawdata.Properties.VariableNames(SARTCols));
 % doesn't get us the extra column for number
 
 SARTAllData.("number") = rawdata.("number");
@@ -377,7 +414,7 @@ SARTPData = SARTAllData(SARTPRows,:);
 SARTPNum = SARTPData.("number");
 SARTPCKey = SARTPData.("correctkey");
 
-SARTPMatch = ~cellfun('isempty', regexp(SARTPData.Properties.VariableNames, 'practice'));
+SARTPCols = ~cellfun('isempty', regexp(SARTPData.Properties.VariableNames, 'practice'));
 % using 'practice' won't work in some of the other tasks.
 
         % FUTURE VERSIONS OF THE TASKS NEED STANDARDIZED VARIABLE NAMING TO
@@ -385,14 +422,14 @@ SARTPMatch = ~cellfun('isempty', regexp(SARTPData.Properties.VariableNames, 'pra
         % OTHER VARIABLES SHOULD ALSO INCLUDE THE TASK LABEL AND BE
         % SEPARATED FOR PRACTICE AND ACTUAL TASKS
 
-SARTPData = SARTPData(:,SARTPMatch);
+SARTPData = SARTPData(:,SARTPCols);
 SARTPData.("number") = SARTPNum;
 SARTPData.("correctkey") = SARTPCKey;
 
 % data should have 10 columns in practice
 
 % can use ~ to get the task data only.
-SARTData = SARTAllData(~SARTPRows,~SARTPMatch);
+SARTData = SARTAllData(~SARTPRows,~SARTPCols);
 
 % data should have 15 columns for SART
 
@@ -432,7 +469,7 @@ SARTData = renamevars(SARTData,["SARTkey_resp_trials.keys","SARTkey_resp_trials.
         % BEFORE ANALYZING THE DATA, REMEMBER TO CHECK WHETHER THE COLUMN FOR
         % ACCURACY IS CORRECT
 
-clear SARTMatch SARTPRows SARTPNum SARTPCKey SARTPMatch SARTLoopCol
+clear SARTCols SARTPRows SARTPNum SARTPCKey SARTPCols SARTLoopCol
 clear SARTRows
 
 
@@ -445,6 +482,7 @@ clear SARTRows
                     % so maybe they'll need to be saved into separate files per task
 
 %% Switch Practice:
+fprintf('Processing Switch data\n')
 % Shape Only
 % pshape_resp.keys, pshape_resp.corr, pshape_resp.rt,
 % practiceshapeloop.thisRepN, practiceshapeloop.thisTrialN,
@@ -521,13 +559,13 @@ clear SARTRows
 
 % some of these can grouped maybe to reduce single calls?
 
-ShapeMatch = ~cellfun('isempty', regexp(rawdata.Properties.VariableNames, 'shape'));
-ColourMatch = ~cellfun('isempty', regexp(rawdata.Properties.VariableNames, 'colour'));
-MixedMatch = ~cellfun('isempty', regexp(rawdata.Properties.VariableNames, 'mix'));
-PracticeSwitchMatch = ~cellfun('isempty', regexp(rawdata.Properties.VariableNames, 'practiceswitch'));
-SwitchCondMatch = ~cellfun('isempty', regexp(rawdata.Properties.VariableNames, 'switchcond'));
+ShapeCols = ~cellfun('isempty', regexp(rawdata.Properties.VariableNames, 'shape'));
+ColourCols = ~cellfun('isempty', regexp(rawdata.Properties.VariableNames, 'colour'));
+MixedCols = ~cellfun('isempty', regexp(rawdata.Properties.VariableNames, 'mix'));
+PracticeSwitchCols = ~cellfun('isempty', regexp(rawdata.Properties.VariableNames, 'practiceswitch'));
+SwitchCondCols = ~cellfun('isempty', regexp(rawdata.Properties.VariableNames, 'switchcond'));
 
-SwitchAllCols = ShapeMatch | ColourMatch | MixedMatch | PracticeSwitchMatch | SwitchCondMatch;
+SwitchAllCols = ShapeCols | ColourCols | MixedCols | PracticeSwitchCols | SwitchCondCols;
 SwitchAllData = rawdata(:,SwitchAllCols);
 
 %then add switchcond, dummyswitchcondition, switchcondition,
@@ -545,7 +583,7 @@ SwitchAllData.("correct") = rawdata.("correct");
 SwitchAllData.("correctresponse") = rawdata.("correctresponse");
 SwitchAllData.("dummycorrectresponse") = rawdata.("dummycorrectresponse");
 
-clear ShapeMatch ColourMatch PracticeSwitchmatch SwitchCondMatch MixedMatch SwitchAllCols
+clear ShapeCols ColourCols PracticeSwitchmatch SwitchCondCols MixedCols SwitchAllCols
 %% Separating practice from task for Switch
 
 % for the practice columns, there is data only during the practice while
@@ -559,13 +597,13 @@ clear ShapeMatch ColourMatch PracticeSwitchmatch SwitchCondMatch MixedMatch Swit
 %isnan doesn't work here because the empty parts aren't NAN for some
 %reason.
 
-SwitchPMatch1 = ~cellfun('isempty', regexp(SwitchAllData.Properties.VariableNames, 'practice'));
-SwitchPMatch2 = ~cellfun('isempty', regexp(SwitchAllData.Properties.VariableNames, 'pshape'));
-SwitchPMatch3 = ~cellfun('isempty', regexp(SwitchAllData.Properties.VariableNames, 'pcolour'));
+SwitchPCols1 = ~cellfun('isempty', regexp(SwitchAllData.Properties.VariableNames, 'practice'));
+SwitchPCols2 = ~cellfun('isempty', regexp(SwitchAllData.Properties.VariableNames, 'pshape'));
+SwitchPCols3 = ~cellfun('isempty', regexp(SwitchAllData.Properties.VariableNames, 'pcolour'));
 
-SwitchPMatch = SwitchPMatch1 | SwitchPMatch2 | SwitchPMatch3;
+SwitchPCols = SwitchPCols1 | SwitchPCols2 | SwitchPCols3;
 
-clear SwitchPMatch1 SwitchPMatch2 SwitchPMatch3
+clear SwitchPCols1 SwitchPCols2 SwitchPCols3
 
 ShapePRows = ~cellfun('isempty',SwitchAllData.("practiceshapeloop.ran"));
 ColourPRows = ~cellfun('isempty',SwitchAllData.("practicecolourloop.ran"));
@@ -582,7 +620,7 @@ SwitchPData = SwitchAllData(SwitchPRows,:);
 SwitchPImages = SwitchPData.("images");
 SwitchPCorrect = SwitchPData.("correct");
 
-SwitchPData = SwitchPData(:,SwitchPMatch);
+SwitchPData = SwitchPData(:,SwitchPCols);
 
 SwitchPData.("images") = SwitchPImages;
 SwitchPData.("correct") = SwitchPCorrect;
@@ -599,9 +637,9 @@ SwitchRows = ShapeRows | ColourRows | SwitchMixedRows;
 
 clear ShapeRows ColourRows SwitchMixedRows
 
-SwitchData = SwitchAllData(SwitchRows,~SwitchPMatch);
+SwitchData = SwitchAllData(SwitchRows,~SwitchPCols);
 
-clear SwitchRows SwitchPMatch
+clear SwitchRows SwitchPCols
 
 % data should have 58 columns here
 
@@ -743,6 +781,7 @@ SwitchData = [SwitchData; DummyRow];
 clear PDummyRow DummyRow SwitchDummyData SwitchPDummyData
 
 %% Symmetry Span Practice
+fprintf('Processing SymSpan data\n')
 % Sym
 % practicepresentedsymmstim, practicesymmcorrectresponse,
 % practicesymmresponse, practicesymmaccuracy, practiceresponse.clicked_name
@@ -820,13 +859,13 @@ clear PDummyRow DummyRow SwitchDummyData SwitchPDummyData
 % and "recallloop." items (period is needed to reduce overlap)
 % and requires adding: practicerecallaccuracy, loopnumber, memnumber, recallaccuracy
 
-SymMatch = ~cellfun('isempty', regexp(rawdata.Properties.VariableNames, 'symm'));
-SquareMatch = ~cellfun('isempty', regexp(rawdata.Properties.VariableNames, 'square'));
-PRespMatch = ~cellfun('isempty', regexp(rawdata.Properties.VariableNames, 'practiceresponse'));
-RecallLoopMatch = ~cellfun('isempty', regexp(rawdata.Properties.VariableNames, 'recallloop.'));
+SymCols = ~cellfun('isempty', regexp(rawdata.Properties.VariableNames, 'symm'));
+SquareCols = ~cellfun('isempty', regexp(rawdata.Properties.VariableNames, 'square'));
+PRespCols = ~cellfun('isempty', regexp(rawdata.Properties.VariableNames, 'practiceresponse'));
+RecallLoopCols = ~cellfun('isempty', regexp(rawdata.Properties.VariableNames, 'recallloop.'));
 
 % combine
-SymSpanAllCols = SymMatch | SquareMatch | PRespMatch | RecallLoopMatch;
+SymSpanAllCols = SymCols | SquareCols | PRespCols | RecallLoopCols;
 SymSpanAllData = rawdata(:,SymSpanAllCols);
 
 % add extra columns
@@ -835,21 +874,21 @@ SymSpanAllData.("loopnumber") = rawdata.("loopnumber");
 SymSpanAllData.("memnumber") = rawdata.("memnumber");
 SymSpanAllData.("recallaccuracy") = rawdata.("recallaccuracy");
 
-clear SymMatch SquareMatch PRespMatch RecallLoopMatch SymSpanAllCols
+clear SymCols SquareCols PRespCols RecallLoopCols SymSpanAllCols
 
 %% Separating practice from task for SymSpan
 
 % symmetry, recall, and the full combined task have practice sections.
 
-SymPracticeMatch = ~cellfun('isempty', regexp(SymSpanAllData.Properties.VariableNames, 'practice'));
-RecalLoopMatch = ~cellfun('isempty', regexp(SymSpanAllData.Properties.VariableNames, 'recallloop'));
-SymetryLoopMatch = ~cellfun('isempty', regexp(SymSpanAllData.Properties.VariableNames, 'symmetryloop'));
-PLoopMatch = ~cellfun('isempty', regexp(SymSpanAllData.Properties.VariableNames, 'ploop'));
-SquareRespPMatch = ~cellfun('isempty', regexp(SymSpanAllData.Properties.VariableNames, 'square_resp_2'));
+SymPracticeCols = ~cellfun('isempty', regexp(SymSpanAllData.Properties.VariableNames, 'practice'));
+RecalLoopCols = ~cellfun('isempty', regexp(SymSpanAllData.Properties.VariableNames, 'recallloop'));
+SymetryLoopCols = ~cellfun('isempty', regexp(SymSpanAllData.Properties.VariableNames, 'symmetryloop'));
+PLoopCols = ~cellfun('isempty', regexp(SymSpanAllData.Properties.VariableNames, 'ploop'));
+SquareRespPCols = ~cellfun('isempty', regexp(SymSpanAllData.Properties.VariableNames, 'square_resp_2'));
 
-SymSpanPMatch = SymPracticeMatch | RecalLoopMatch | SymetryLoopMatch | PLoopMatch | SquareRespPMatch;
+SymSpanPCols = SymPracticeCols | RecalLoopCols | SymetryLoopCols | PLoopCols | SquareRespPCols;
 
-clear SymPracticeMatch RecalLoopMatch SymetryLoopMatch PLoopMatch SquareRespPMatch
+clear SymPracticeCols RecalLoopCols SymetryLoopCols PLoopCols SquareRespPCols
 
 % for the practice columns, there is data only during the practice while
 % the rest is empty cells, so rows can be eliminated this way
@@ -876,7 +915,7 @@ SymSpanPSymetrical = SymSpanPData.("symmetrical");
 SymSpanPLoopNum = SymSpanPData.("loopnumber");
 SymSpanPMemNum = SymSpanPData.("memnumber");
 
-SymSpanPData = SymSpanPData(:,SymSpanPMatch);
+SymSpanPData = SymSpanPData(:,SymSpanPCols);
 
 SymSpanPData.("symmetrical") = SymSpanPSymetrical;
 SymSpanPData.("loopnumber") = SymSpanPLoopNum;
@@ -897,9 +936,9 @@ SymSpanRows = SymRows | RecallRows | SymSpanMixedRows;
 
 clear SymSpanMixedRows RecallRows SymRows
 
-SymSpanData = SymSpanAllData(SymSpanRows,~SymSpanPMatch);
+SymSpanData = SymSpanAllData(SymSpanRows,~SymSpanPCols);
 
-clear SymSpanRows SymSpanPMatch
+clear SymSpanRows SymSpanPCols
 
 % older data should have 39 columns
 % newer data should have 51 columns
@@ -1122,6 +1161,7 @@ SymSpanData = SymSpanData(SymRows,:);
 clear SymStimRows RecStimRows SymRows
 
 %% N-Back Practice
+fprintf('Processing NBack data\n')
 % 1 back
 % presp_1back.keys, presp_1back.corr, practice1backloop.thisRepN, practice1backloop.thisTrialN, 
 % practice1backloop.thisN, practice1backloop.thisIndex, practice1backloop.ran, letter, presp_1back.rt
@@ -1163,8 +1203,8 @@ clear SymStimRows RecStimRows SymRows
 
 % Most NBack columns should have the word 'back' in them except
 
-NBackMatch = ~cellfun('isempty', regexp(rawdata.Properties.VariableNames, 'back'));
-NBackAllData = rawdata(:,rawdata.Properties.VariableNames(NBackMatch));
+NBackCols = ~cellfun('isempty', regexp(rawdata.Properties.VariableNames, 'back'));
+NBackAllData = rawdata(:,rawdata.Properties.VariableNames(NBackCols));
 
 % add columns for 'letter' and 'target'
 
@@ -1172,7 +1212,7 @@ NBackAllData.("letter") = rawdata.("letter");
 NBackAllData.("target") = rawdata.("target");
 % adds the extra column to the end.
 
-clear NBackMatch
+clear NBackCols
 
 %% Separating practice from task for NBack
 
@@ -1197,10 +1237,10 @@ clear NBackPRows
 % could I just get not the columns in the practice data?
 % Can't find a good way to do this.
 
-NBackPMatch1 = ~cellfun('isempty', regexp(NBackAllData.Properties.VariableNames, 'practice'));
-NBackPMatch2 = ~cellfun('isempty', regexp(NBackAllData.Properties.VariableNames, 'presp'));
+NBackPCols1 = ~cellfun('isempty', regexp(NBackAllData.Properties.VariableNames, 'practice'));
+NBackPCols2 = ~cellfun('isempty', regexp(NBackAllData.Properties.VariableNames, 'presp'));
 
-NBackPMatch = NBackPMatch1 | NBackPMatch2;
+NBackPCols = NBackPCols1 | NBackPCols2;
 
 % combine rows where dummy1backloop.ran, dummy2backloop.ran, and target are
 % empty
@@ -1211,14 +1251,14 @@ NBackTargetRows = ~cellfun('isempty',NBackAllData.("target"));
 
 NBackRows = NBackDummy1Rows | NBackDummy2Rows | NBackTargetRows;
 
-NBackData = NBackAllData(NBackRows,~NBackPMatch);
+NBackData = NBackAllData(NBackRows,~NBackPCols);
 
 % Can't just remove all empty variables because they should not respond to
 % the dummys but might
 
 % Practice should have 17 columns, actual should have 41 columns
 
-clear NBackPMatch* NBackDummy1Rows NBackDummy2Rows NBackTargetRows NBackRows
+clear NBackPCols* NBackDummy1Rows NBackDummy2Rows NBackTargetRows NBackRows
 
 %% Remove more extra columns for NBack
 
@@ -1327,6 +1367,7 @@ clear NBackDummyRow NBackDummyData
             % REFER TO TRIAL NUMBER, NOT JUST TO THE PREVIOUS ROW
 
 %% MCT Instructions
+fprintf('Processing MCT data\n')
 %  onoff_resp_instructions_2.keys	onoff_resp_instructions_2.rt, aware_resp_instructions_2.keys,
 % aware_resp_instructions_2.rt, intent_response_instructions_2.keys, intent_response_instructions_2.rt
 % (responding to probe questions in instructions)
@@ -1377,18 +1418,18 @@ clear NBackDummyRow NBackDummyData
 % this leaves practiceloop but other tasks have this phrase in column names
 % and I'm not sure how to make it look for practiceloop* exactly
 
-ToneMatch = ~cellfun('isempty', regexp(rawdata.Properties.VariableNames, 'tone'));
-ProbeMatch = ~cellfun('isempty', regexp(rawdata.Properties.VariableNames, 'probe'));
-OnOffMatch = ~cellfun('isempty', regexp(rawdata.Properties.VariableNames, 'onoff'));
-AwareMatch = ~cellfun('isempty', regexp(rawdata.Properties.VariableNames, 'aware'));
-IntentMatch = ~cellfun('isempty', regexp(rawdata.Properties.VariableNames, 'intent'));
+ToneCols = ~cellfun('isempty', regexp(rawdata.Properties.VariableNames, 'tone'));
+ProbeCols = ~cellfun('isempty', regexp(rawdata.Properties.VariableNames, 'probe'));
+OnOffCols = ~cellfun('isempty', regexp(rawdata.Properties.VariableNames, 'onoff'));
+AwareCols = ~cellfun('isempty', regexp(rawdata.Properties.VariableNames, 'aware'));
+IntentCols = ~cellfun('isempty', regexp(rawdata.Properties.VariableNames, 'intent'));
 
 % combine
 
-MCTMatch = ToneMatch | ProbeMatch | OnOffMatch | AwareMatch | IntentMatch;
-MCTAllData = rawdata(:,rawdata.Properties.VariableNames(MCTMatch));
+MCTCols = ToneCols | ProbeCols | OnOffCols | AwareCols | IntentCols;
+MCTAllData = rawdata(:,rawdata.Properties.VariableNames(MCTCols));
 
-clear *Match
+clear *Cols
 
 % add extra columns
 MCTAllData.("practiceloop.thisRepN") = rawdata.("practiceloop.thisRepN");
@@ -1570,7 +1611,7 @@ MCTPData = MCTPData(~MCTPEraseRows,:);
 MCTEraseRows = strcmp('erase',MCTData.("MCTTrial"));
 MCTData = MCTData(~MCTEraseRows,:);
 
-clear MCTPEraseRows MCTEraswRows
+clear MCTPEraseRows MCTEraseRows
 
 
 %% Add to counters for MCT
@@ -1580,8 +1621,272 @@ MCTData.("MCTTrial") = str2double(MCTData.("MCTTrial")) + 1;
 
 %% Relabel Probe and Response Types
 
-
-            %START HERE NEXT TIME
-
 % the following didn't work
 % test = strrep(MCTData.("MCTProbeType"),'1','miscount');
+% strrep(str,old,new) 
+
+% X.fruit = categorical(X.fruit);
+% X.fruit = renamecats(X.fruit,{'apple','orange','grapes'},{'1','2','3'});
+
+%test1 = MCTPData;
+%test1.("MCTPProbeType") = categorical(MCTPData.("MCTPProbeType"));
+%test1 = renamecats(test1.("MCTPProbeType"),{'0','1','2','3'},{'NoErrorP','Miscount','LostCount','Timeout'});
+% get error where oldnames need to  be a subset of categories. makes blanks
+% into 'undefined' category too
+
+% looping works
+for PProbeRowIdx = 1:height(MCTPData)
+    if contains(MCTPData.("MCTPProbeType"){PProbeRowIdx},'0')
+        MCTPData.("MCTPProbeType"){PProbeRowIdx} = 'NoErrorP';
+
+        if contains(MCTPData.("MCTPProbeIntroResp"){PProbeRowIdx},'left') || contains(MCTPData.("MCTPProbeIntroResp"){PProbeRowIdx},'right')
+            % if it was the no error probe, then their response should just
+            % be 'continue' with 'left' or 'right', but in case they misread...
+            MCTPData.("MCTPProbeIntroResp"){PProbeRowIdx} = 'Continue';
+        else
+            MCTPData.("MCTPProbeIntroResp"){PProbeRowIdx} = 'ContinuedWrongKey';
+            % just so I can check if someone isn't reading or pressing
+            % 'down' lingered for them
+        end
+
+    elseif contains(MCTPData.("MCTPProbeType"){PProbeRowIdx},'1')
+        MCTPData.("MCTPProbeType"){PProbeRowIdx} = 'Miscount';
+
+        % if they miscounted, left, right, and down are all options.
+        if contains(MCTPData.("MCTPProbeIntroResp"){PProbeRowIdx},'left')
+            MCTPData.("MCTPProbeIntroResp"){PProbeRowIdx} = 'Accident';
+            % accidental key press
+        elseif contains(MCTPData.("MCTPProbeIntroResp"){PProbeRowIdx},'right')
+            MCTPData.("MCTPProbeIntroResp"){PProbeRowIdx} = 'ThoughtCorrect';
+            % thought they were counting correctly
+        elseif contains(MCTPData.("MCTPProbeIntroResp"){PProbeRowIdx},'down')
+            MCTPData.("MCTPProbeIntroResp"){PProbeRowIdx} = 'Continue';
+        end
+
+
+    elseif contains(MCTPData.("MCTPProbeType"){PProbeRowIdx},'2')
+        MCTPData.("MCTPProbeType"){PProbeRowIdx} = 'LostCount';
+        
+        % if they lost count, left and down are the only options presented
+        if contains(MCTPData.("MCTPProbeIntroResp"){PProbeRowIdx},'left')
+            MCTPData.("MCTPProbeIntroResp"){PProbeRowIdx} = 'Accident';
+            % accidental key press
+        elseif contains(MCTPData.("MCTPProbeIntroResp"){PProbeRowIdx},'right')
+            MCTPData.("MCTPProbeIntroResp"){PProbeRowIdx} = 'ContinuedWrongKey';
+            % thought they were counting correctly
+        elseif contains(MCTPData.("MCTPProbeIntroResp"){PProbeRowIdx},'down')
+            MCTPData.("MCTPProbeIntroResp"){PProbeRowIdx} = 'Continue';
+        end
+
+    elseif contains(MCTPData.("MCTPProbeType"){PProbeRowIdx},'3')
+        MCTPData.("MCTPProbeType"){PProbeRowIdx} = 'Timeout';
+        
+        % if they timed out, right and down are the only options presented
+        if contains(MCTPData.("MCTPProbeIntroResp"){PProbeRowIdx},'left')
+            MCTPData.("MCTPProbeIntroResp"){PProbeRowIdx} = 'ContinuedWrongKey';
+            % accidental key press
+        elseif contains(MCTPData.("MCTPProbeIntroResp"){PProbeRowIdx},'right')
+            MCTPData.("MCTPProbeIntroResp"){PProbeRowIdx} = 'ThoughtCorrect';
+            % thought they were counting correctly
+        elseif contains(MCTPData.("MCTPProbeIntroResp"){PProbeRowIdx},'down')
+            MCTPData.("MCTPProbeIntroResp"){PProbeRowIdx} = 'Continue';
+        end
+    end
+
+    % regardless of the probe type the other responses are consistent
+    if contains(MCTPData.("MCTPProbeOnOffResp"){PProbeRowIdx},'left')
+        MCTPData.("MCTPProbeOnOffResp"){PProbeRowIdx} = 'OnTask';
+    elseif contains(MCTPData.("MCTPProbeOnOffResp"){PProbeRowIdx},'right')
+        MCTPData.("MCTPProbeOnOffResp"){PProbeRowIdx} = 'MW';
+    end
+    if contains(MCTPData.("MCTPProbeAwareResp"){PProbeRowIdx},'left')
+        MCTPData.("MCTPProbeAwareResp"){PProbeRowIdx} = 'Unaware';
+    elseif contains(MCTPData.("MCTPProbeAwareResp"){PProbeRowIdx},'right')
+        MCTPData.("MCTPProbeAwareResp"){PProbeRowIdx} = 'Aware';
+    end
+    if contains(MCTPData.("MCTPProbeIntentResp"){PProbeRowIdx},'left')
+        MCTPData.("MCTPProbeIntentResp"){PProbeRowIdx} = 'Intentional';
+    elseif contains(MCTPData.("MCTPProbeIntentResp"){PProbeRowIdx},'right')
+        MCTPData.("MCTPProbeIntentResp"){PProbeRowIdx} = 'Unintentional';
+    end
+end
+
+
+for ProbeRowIdx = 1:height(MCTData)
+    if contains(MCTData.("MCTProbeType"){ProbeRowIdx},'1')
+        MCTData.("MCTProbeType"){ProbeRowIdx} = 'Miscount';
+
+        % if they miscounted, left, right, and down are all options.
+        if contains(MCTData.("MCTProbeIntroResp"){ProbeRowIdx},'left')
+            MCTData.("MCTProbeIntroResp"){ProbeRowIdx} = 'Accident';
+            % accidental key press
+        elseif contains(MCTData.("MCTProbeIntroResp"){ProbeRowIdx},'right')
+            MCTData.("MCTProbeIntroResp"){ProbeRowIdx} = 'ThoughtCorrect';
+            % thought they were counting correctly
+        elseif contains(MCTData.("MCTProbeIntroResp"){ProbeRowIdx},'down')
+            MCTData.("MCTProbeIntroResp"){ProbeRowIdx} = 'Continue';
+        end
+
+
+    elseif contains(MCTData.("MCTProbeType"){ProbeRowIdx},'2')
+        MCTData.("MCTProbeType"){ProbeRowIdx} = 'LostCount';
+        
+        % if they lost count, left and down are the only options presented
+        if contains(MCTData.("MCTProbeIntroResp"){ProbeRowIdx},'left')
+            MCTData.("MCTProbeIntroResp"){ProbeRowIdx} = 'Accident';
+            % accidental key press
+        elseif contains(MCTData.("MCTProbeIntroResp"){ProbeRowIdx},'right')
+            MCTData.("MCTProbeIntroResp"){ProbeRowIdx} = 'ContinuedWrongKey';
+            % thought they were counting correctly
+        elseif contains(MCTData.("MCTProbeIntroResp"){ProbeRowIdx},'down')
+            MCTData.("MCTProbeIntroResp"){ProbeRowIdx} = 'Continue';
+        end
+
+    elseif contains(MCTData.("MCTProbeType"){ProbeRowIdx},'3')
+        MCTData.("MCTProbeType"){ProbeRowIdx} = 'Timeout';
+        
+        % if they timed out, right and down are the only options presented
+        if contains(MCTData.("MCTProbeIntroResp"){ProbeRowIdx},'left')
+            MCTData.("MCTProbeIntroResp"){ProbeRowIdx} = 'ContinuedWrongKey';
+            % accidental key press
+        elseif contains(MCTData.("MCTProbeIntroResp"){ProbeRowIdx},'right')
+            MCTData.("MCTProbeIntroResp"){ProbeRowIdx} = 'ThoughtCorrect';
+            % thought they were counting correctly
+        elseif contains(MCTData.("MCTProbeIntroResp"){ProbeRowIdx},'down')
+            MCTData.("MCTProbeIntroResp"){ProbeRowIdx} = 'Continue';
+        end
+    end
+
+    % regardless of the probe type the other responses are consistent
+    if contains(MCTData.("MCTProbeOnOffResp"){ProbeRowIdx},'left')
+        MCTData.("MCTProbeOnOffResp"){ProbeRowIdx} = 'OnTask';
+    elseif contains(MCTData.("MCTProbeOnOffResp"){ProbeRowIdx},'right')
+        MCTData.("MCTProbeOnOffResp"){ProbeRowIdx} = 'MW';
+    end
+    if contains(MCTData.("MCTProbeAwareResp"){ProbeRowIdx},'left')
+        MCTData.("MCTProbeAwareResp"){ProbeRowIdx} = 'Unaware';
+    elseif contains(MCTData.("MCTProbeAwareResp"){ProbeRowIdx},'right')
+        MCTData.("MCTProbeAwareResp"){ProbeRowIdx} = 'Aware';
+    end
+    if contains(MCTData.("MCTProbeIntentResp"){ProbeRowIdx},'left')
+        MCTData.("MCTProbeIntentResp"){ProbeRowIdx} = 'Intentional';
+    elseif contains(MCTData.("MCTProbeIntentResp"){ProbeRowIdx},'right')
+        MCTData.("MCTProbeIntentResp"){ProbeRowIdx} = 'Unintentional';
+    end
+end
+% and then I found out if I used {} instead of () I wouldn't have gotten
+% the error for using == with type 'cell'
+% except there are still errors when the comparison value isn't a number in
+% quotes I guess.
+
+clear *Idx
+
+
+
+%% Save output for checking
+fprintf('Saving processed data\n')
+
+% could just do scoring immediately, but just in case, I'm going to save
+% the separate files for each task.
+% FileID = strcat(ID, "_", Date, "_", expName);
+% could loop this but not going to for now.
+
+SARTFileID = strcat(ID,"_SART.csv");
+SwitchFileID = strcat(ID,"_Switch.csv");
+SymSpanFileID = strcat(ID,"_SymSpan.csv");
+NBackFileID = strcat(ID,"_NBack.csv");
+MCTFileID = strcat(ID,"_MCT.csv");
+
+SARTPFileID = strcat(ID,"_SARTP.csv");
+SwitchPFileID = strcat(ID,"_SwitchP.csv");
+SymSpanPFileID = strcat(ID,"_SymSpanP.csv");
+NBackPFileID = strcat(ID,"_NBackP.csv");
+MCTPFileID = strcat(ID,"_MCTP.csv");
+
+writetable(SARTData, strcat(cleaneddatadir,SARTFileID));
+writetable(SwitchData,strcat(cleaneddatadir,SwitchFileID));
+writetable(SymSpanData,strcat(cleaneddatadir,SymSpanFileID));
+writetable(NBackData,strcat(cleaneddatadir,NBackFileID));
+writetable(MCTData,strcat(cleaneddatadir,MCTFileID));
+
+writetable(SARTPData, strcat(cleanedpdatadir,SARTPFileID));
+writetable(SwitchPData, strcat(cleanedpdatadir,SwitchPFileID));
+writetable(SymSpanPData, strcat(cleanedpdatadir,SymSpanPFileID));
+writetable(NBackPData, strcat(cleanedpdatadir,NBackPFileID));
+writetable(MCTPData, strcat(cleanedpdatadir,MCTPFileID));
+
+clear *FileID *AllData
+
+%% SCORING NOTES
+
+% may want to 'score' practice and actual for later checking.
+% the accuracy indicators from psychopy may not always be consistent.
+
+%% Scoring SART
+% difference between correct response to non-targets (hit) and falsely responding
+% to 3 (false alarm)
+% if hit rate or false alarm rate are 0 or 1, adjust by 0.01
+
+% so need to find:
+% number of trials (should be consistent across participants)
+% number of correct responses to numbers other than 3
+% number of incorrectly responding to number 3
+% hit rate = correct responses to numbers other than 3 / total numbers
+% other than 3
+% false alarm rate = incorrect response to 3 / total 3s
+% measure of interest (d prime) = correct to non targets - incorrect
+% responses to 3
+
+% some studies report mean accuracy rates
+
+%% Scoring Switch
+% calculating switch cost for reaction time
+% average reaction time for switch - average reaction time for stay
+% this is for TRIALS not subtasks, calculated within the mixed blocks.
+
+% need to calculate:
+% number of mixed block stay and switch trials (should be conssitent across
+% participants)
+% average reaction time for mixed blocks switch trials
+% average reaction time for mixed blocks stay trials
+% difference between these averages
+
+%% Scoring SymmSpan
+% partial score, total number of squares recalled in the correct serial
+% position (regardless of if whole series was correct)
+
+% need to find:
+% (number of red squares; should be consistent across participants)
+% total correct red squares
+
+%% Scoring NBack
+% d prime, difference between correct response and false alarm to incorrect
+% stimuli
+
+% separately and together for 1-back and 2-back, Some studies calculate an
+% average across n-back loads...
+% need to calculate
+% number of trials (should be consistent across participants)
+% number of correct responses to target
+% number of incorrectly responding to number non-target
+% hit rate = correct responses to target/ total number of targets
+% false alarm rate = incorrect response to non-target / non-targets
+% measure of interest (d prime) = correct to target - incorrect
+% to non-target
+
+% some studies have also found a ceiling effect with the 1-back
+
+%% Scoring Working Memory
+% z-score transform and average symmetry span and n-back task scores
+
+%% Scoring MCT
+% proportion of probes where participant was MW
+% proportion of probes where participant was MW and aware/unaware
+% proportion of probes where participant was MW and had
+% intentional/unintentional thoughts
+
+% will want to get total probes for the record as well
+% total probes of each type (miscount, lost count, time out)
+
+% percentage of trials where the participant did not respond
+
