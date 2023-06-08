@@ -2,7 +2,7 @@
 
 % Chelsie H.
 % Started: June 7, 2023
-% Last updated: June 7, 2023
+% Last updated: June 8, 2023
 
 % Purpose: to ensure timing of EEG information from brainvision recorder
 % and psychopy task timing are consistent.
@@ -36,14 +36,63 @@
 % Compare psychopy and EEG photodiode start times
 % Compare EEG photodiode and trigger times
 
+%% Clear all and Select Directory
+
+                            % EVENTUALLY THIS NEEDS TO LOOP THROUGH SEVERAL
+                            % DATA FILES
+
+clc
+clear
+
+fprintf('Setting directories\n')
+
+% on laptop 
+maindir = ('C:/Users/chels/OneDrive - University of Calgary/1_PhD_Project/Scripting/EEGDataChecking/');
+
+% on desktop 
+% maindir = ('C:/Users/chish/OneDrive - University of Calgary/1_PhD_Project/Scripting/EEGDataChecking/');
+
+%% Load in Data
+% on laptop
+rawdatadir = [maindir 'RawData/'];
+addpath(genpath(maindir))
+
+              % NEED TO FIND A WAY TO GET IT TO ONLY SELECT SPECIFIC FILES
+              % BY PARTICIPANT
+              % Could look for unique RADXXX, but for psychopy data there
+              % are many .csv and we need to select the one that doesn't
+              % have 'loop' at the end.
+% load in psychopy data
+fprintf('Loading in raw psychopy data\n')
+
+            % fprintf('\n******\nLoading in raw data file %d\n******\n\n', (whatever the looping variable is called));
+
+opts = detectImportOptions([rawdatadir 'RAD_DEMO_EEG Metronome Counting Task_2023-06-06_14h58.38.178.csv']);
+opts.VariableNamingRule = 'preserve'; % need to set to preserve or it changes variable names ot match matlab syntax
+rawdata = readtable([rawdatadir 'RAD_DEMO_EEG Metronome Counting Task_2023-06-06_14h58.38.178.csv'],opts);
+% creates a table where all variables are 'cell'
+
+
 %% Extract EEG Data
-[data]=ft_read_data('D:\EFMWADHD_Demo\RED0000_1.eeg');
-[hdr]=ft_read_header('D:\EFMWADHD_Demo\RED0000_1.vhdr');
-[markers]=ft_read_event('D:\EFMWADHD_Demo\RED0000_1.vmrk');
+
+%[data]=ft_read_data([rawdatadir 'RAD_DEMO.eeg']);
+%[hdr]=ft_read_header([rawdatadir 'RAD_DEMO.vhdr']);
+[markers]=ft_read_event([rawdatadir 'RAD_DEMO.vmrk']);
+
+% Only interested in markers to check timing.
+% markers structure has 6 fields: type (trigger type), value (trigger value
+% given by comment or psychopy; see TriggerValueKey.xlsx for information),
+% sample (sample number relative to start at 1), 
+% duration (should always be 1), timestamp (not recorded?), offset (not
+% recorded?)
+
+
 samples = extractfield(markers,'sample');
 samples=samples';
 for r=2:346
     samples(r,2) = (samples(r,1)-samples(r-1,1))/500;
+
+    % sample frequency is 500 Hz (500 samples per second)
 
 end
 
@@ -52,3 +101,20 @@ end
 % then use test1(2,:,:)
 % test1(2,1,(strcmp(test1(2,:,:),'S  50'))) returns all columns with the ''
 % value, in this case 0.
+
+%% Calculate Psychopy Time Differences
+
+% between photodiodes and triggers
+
+% rename columns
+
+% EXAMPLE
+SARTPData = renamevars(SARTPData,["SARTkey_resp_practice.keys", ...
+    "SARTkey_resp_practice.corr", "SARTkey_resp_practice.rt",  ...
+    "SARTpracticeloop.thisN","number","correctkey"], ...
+    ["SARTPResp","SARTPAcc","SARTPRT","SARTPTrial","SARTPStim","SARTPCResp"]);
+
+SARTData = renamevars(SARTData,["SARTkey_resp_trials.keys","SARTkey_resp_trials.corr", ...
+    "SARTkey_resp_trials.rt","SARTblock1loop.thisN","number","correctkey"], ...
+    ["SARTResp","SARTAcc","SARTRT","SARTTrial","SARTStim","SARTCResp"]);
+
