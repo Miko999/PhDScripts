@@ -76,13 +76,20 @@
 clc
 clear
 
+% Request for which device to set directory
+
+LaptopOrDesktop = input('Which device are you using? (1 for Desktop, 2 for Laptop):');
+
 fprintf('Setting directories\n')
 
-% on laptop 
-% maindir = ('C:/Users/chels/OneDrive - University of Calgary/1_PhD_Project/Scripting/RPSPsychoPyDataCleaning/');
+if LaptopOrDesktop == 1
+    % on desktop 
+    maindir = ('C:/Users/chish/OneDrive - University of Calgary/1_PhD_Project/Scripting/RPSPsychoPyDataCleaning/');
 
-% on desktop 
-maindir = ('C:/Users/chish/OneDrive - University of Calgary/1_PhD_Project/Scripting/RPSPsychoPyDataCleaning/');
+else
+    % on laptop 
+    maindir = ('C:/Users/chels/OneDrive - University of Calgary/1_PhD_Project/Scripting/RPSPsychoPyDataCleaning/');
+end
 
 
 %% Load in Data
