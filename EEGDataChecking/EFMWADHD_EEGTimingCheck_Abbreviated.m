@@ -24,23 +24,11 @@
 % psychopy data. 1 will have to be added to counters when necessary
 % to make this more intuitive in cleaned data.
 
-%% TO DO
-% Make code to extract relevant EEG data
-% Determine what parts of EEG data are needed
-% Create equal time scales (i.e., same starting point and convert to
-% milliseconds or seconds) for psychopy and EEG data
-% Check time differences between triggers, photodiodes, and relevant
-% stimuli
-% Compare trigger time from psychopy with trigger time from EEG data
-% Determine when photodiode start times are in EEG data
-% Compare psychopy and EEG photodiode start times
-% Compare EEG photodiode and trigger times
-% psychopy data also need to look at start and stop times for tones
-
 %% Clear all and Select Directories
 
                             % EVENTUALLY THIS NEEDS TO LOOP THROUGH SEVERAL
                             % DATA FILES
+                            % At the moment this just find the demo data.
 
 clc
 clear
@@ -61,34 +49,20 @@ end
 rawdatadir = [maindir 'RawData/'];
 addpath(genpath(maindir))
 
-% create storage table
+              % NEED TO FIND A WAY TO GET IT TO ONLY SELECT SPECIFIC FILES
+              % BY PARTICIPANT
+              % but for psychopy data there are many csvs and only one is
+              % relevant.
 
-AllMarkers = table;
-TimingDifferences = table;
+% create storage tables
+TimingDifferences = table; % to put the means and sds for everything in one place
+CombinedMarkers = table; % to combine the information of interest from EEG and psychopy marker information
 
 %% Load in Psychopy Data
 
 fprintf('Loading in raw psychopy data\n')
 
             % fprintf('\n******\nLoading in raw data file %d\n******\n\n', (whatever the looping variable is called));
-
-              % NEED TO FIND A WAY TO GET IT TO ONLY SELECT SPECIFIC FILES
-              % BY PARTICIPANT
-              % Could look for unique RADXXX, but for psychopy data there
-              % are many .csv and we need to select the one that doesn't
-              % have 'loop' at the end.
-
-              % dir(fullfile(rawdatadir,'RAD*EEG Metronome Counting Task*.csv')) 
-              % gives all of the filesr related to this
-              % but need to omit those with 'loop'
-
-              % test = dir(fullfile(rawdatadir,'RAD*EEG Metronome Counting Task*.csv'));
-              % test = struct2table(test);
-              % keeprows = find(~contains(test.name,'loop'));
-              % test = test(keeprows,:);
-
-              % would have to do something like this to just get the .csvs
-              % for this script and loop through each participant
 
 filenames = dir(fullfile(rawdatadir,'RAD*EEG Metronome Counting Task*.csv'));
 filenamestable = struct2table(filenames);
@@ -106,11 +80,10 @@ filenamesmatrix = cell2mat(filenamescell(3,1));
 filenamestring = mat2str(filenamesmatrix);
 filenamestring = strrep(filenamestring,'''','');
 
-
 opts = detectImportOptions([rawdatadir filenamestring]);
 opts.VariableNamingRule = 'preserve'; % need to set to preserve or it changes variable names ot match matlab syntax
 rawdata = readtable([rawdatadir filenamestring],opts);
-% creates a table where all variables are 'cell'
+% creates a table where all variables are cell types
 
 clear opts filenames filenamestable filenamesmatrix filenamestring keeprows
 % would keep filenamescell for looping
@@ -184,89 +157,21 @@ fprintf('Loading in raw EEG data\n')
 
 [data]=ft_read_data([rawdatadir 'RAD_DEMO.eeg']);
 %[hdr]=ft_read_header([rawdatadir 'RAD_DEMO.vhdr']);
+
+fprintf('Loading in raw EEG marker data\n')
+
 [markers]=ft_read_event([rawdatadir 'RAD_DEMO.vmrk']);
-
-%% Trying different methods
-
-        % Convert sample values to seconds without including trigger values
-
-% Only interested in markers to check timing.
-% markers structure has 6 fields: type (trigger type), value (trigger value
-% given by comment or psychopy; see TriggerValueKey.xlsx for information),
-% sample (sample number relative to start at 1), 
-% duration (should always be 1), timestamp (not recorded), offset (not
-% recorded)
-
-% create a double with just the sample values
-%samples = extractfield(markers,'sample');
-% flip from N x 1 to 1 x N
-%samples=samples';
-
-% row 1 should always be just '1' for samples
-%for sampleidx =2:346
-    % for all other rows
-    % add a second column with the value of the first column divided by
-    % sampling rate (500 Hz; 500 samples per second)
-    % this second column is the sample time point in seconds relative to
-    % the start of recording
-%    samples(sampleidx,2) = (samples(sampleidx,1)-samples(sampleidx-1,1))/500;
-%end
-
-        % Extract information for specific markers.
-
-% to check within markers array for one of the columns
-% test1 = struct2cell(markers);
-% then use test1(2,:,:)
-% test1(2,1,(strcmp(test1(2,:,:),'S  50'))) returns all columns with the ''
-% value, in this case 0.
-
-
-% convert the markers structure into a cell
-% markerscell = struct2cell(markers);
-
-% for this cell, the first dimension is used to go through each part of the
-% data (the columns in the markers structure)
-% the second dimension is only equal to 1.
-% the third dimension goes through each sample point.
-
-% markerscell(2,:,:) returns all of the trigger values in single quotes,
-% can also just use (2,1,:) in this data. 2 because value is the second value in each
-% part of the cell (type is the first value)
-% e.g., {'S   5'}
-
-% to check for markers
-% test = markerscell(2,1,(strcmp(markerscell(2,:,:),'S  1')));
-% test is a cell where the third dimension is the number of 'S  1'
-% test = markerscell(:,:,(strcmp(markerscell(2,:,:),'S  1')));
-% by asking for all of the first two dimensions of markerscell, now test
-% has all of the markers' information for only those with withe value 'S  1'
-
-% However, this does not allow us to find out what rows of samples are the
-% ones of interest in order to compare timing across multiple trigger
-% values
-
 
 %% Determine rows with trigger timing and values
 
 fprintf('Extracting EEG trial trigger timing from markers\n')
 
-% What if we change it to a table?
 markerstable = struct2table(markers);
-
-% find(strcmp('S  1',markerstable.value))
-% gives us all rows where marker values are equal to 'S  1'
-
-% really, we want to get the timing for each trigger type, as well as the
-% difference in timing between a trigger and a previous trigger (except
-% with the very first trigger).
-
-        % we will need to use the task start trigger to put all of the times into
-        % the same scale as the psychopy data
 
 % to check timing we don't need any of the 'markers' where type is
 % 'Comment' or 'New Segment'
 % the new segment rows are also where the marker value is lost sample
-% find these rows
+
 commentrow  = strcmp('Comment',markerstable.type);
 newsegrow = strcmp('New Segment',markerstable.type);
 
@@ -276,21 +181,13 @@ excessEEGrows = commentrow | newsegrow;
 % remove those rows
 EEGMarkers = markerstable(~excessEEGrows,1:3);
 
-clear commentrow newsegrow excessEEGrows remove* demoremove
-
-% for a cleanmarkers structure, cleanmarkers = markers(~excessEEGrows)
-
-% remove extra fields for cleanmarkers structure
-% cleanmarkers = rmfield(cleanmarkers,"duration");
-% cleanmarkers = rmfield(cleanmarkers,"timestamp");
-% cleanmarkers = rmfield(cleanmarkers,"offset");
+clear commentrow newsegrow excessEEGrows
 
 % create a new column in the table for timing
-
 EEGMarkers.time = EEGMarkers.sample/500;
 
-% create new column for time since task start
-
+% create new column for time since task start and time since previous
+% trigger
 for markerrowidx = 2:size(EEGMarkers,1)
     % for all rows except the first
     EEGMarkers.triggertimesincestart(markerrowidx) = EEGMarkers.time(markerrowidx) - EEGMarkers.time(find(strcmp('S160',EEGMarkers.value)));
@@ -300,17 +197,12 @@ for markerrowidx = 2:size(EEGMarkers,1)
     % and time since the previous trigger is 
 end
 
-clear markerrowidx
-% now we have the seconds since the start of hte task and the seconds
-% between triggers.
-
+clear markerrowidx markerstable
 
 %% Calculate mean and sd for time between beats according to EEG triggers
 
 % need to select only those triggers with values from 'S  1' to 'S 25' and
 % 'S101' through 'S125'
-% can strcmp('string',cleanmarkers.value) to find the rows where value is
-% equal to each, or where value is not equal to all other values
 
 fprintf('Calculating time between beats for EEG data.\n')
 
@@ -351,12 +243,7 @@ clear EEGbeat* eegtrialtimes EEGmean*
 
 %% Combine All Trigger, Photodiode, and Stimuli timing information from psychopy data to roughly match EEG markers
 
-% how do I combine all of the separate columns so that they all create unified columns for
-% triggers, photodiodes, and stimuli?
-
-% manually input rows but make loops for trial blocks? will have to
-% manually add rows 'start' and probes because they occupy the same row in
-% the psychopy data.
+fprintf('Organizing psychopy marker data.\n')
 
 warning('off','all');
 
@@ -366,19 +253,24 @@ PsychoPyMarkers.Label(1) = {'TaskStart'};
 PsychoPyMarkers.Value(1) = {'S160'};
 PsychoPyMarkers.TriggerTime(1) = rawdata.StartTrigger(1);
 PsychoPyMarkers.PhotodiodeTime(1) = rawdata.StartPhotodiode(1);
-PsychoPyMarkers.StimulusTime(1) = rawdata.PTrialToneStart(1);
+PsychoPyMarkers.StimulusStartTime(1) = rawdata.PTrialToneStart(1);
+PsychoPyMarkers.StimulusStopTime(1) = rawdata.PTrialToneStart(1);
 % Sound Check
 PsychoPyMarkers.Label(2) = {'SoundCheckStart'};
 PsychoPyMarkers.Value(2) = {'S165'};
 PsychoPyMarkers.TriggerTime(2) = rawdata.SoundTestTrigger(1);
 PsychoPyMarkers.PhotodiodeTime(2) = rawdata.SoundTestPhotodiode(1);
-PsychoPyMarkers.StimulusTime(2) = rawdata.SoundTestToneStart(1);
+PsychoPyMarkers.StimulusStartTime(2) = rawdata.SoundTestToneStart(1);
+    % Should make this conditional on if they listed to the whole tone, but
+    % not necessary really.
+PsychoPyMarkers.StimulusStopTime(2) = rawdata.PTrialToneStart(1);
 % practice get ready S190
 PsychoPyMarkers.Label(3) = {'PGetReady'};
 PsychoPyMarkers.Value(3) = {'S190'};
 PsychoPyMarkers.TriggerTime(3) = rawdata.PracticeStartTrigger(2);
 PsychoPyMarkers.PhotodiodeTime(3) = rawdata.PracticeStartPhotodiode(2);
-PsychoPyMarkers.StimulusTime(3) = rawdata.PTrialToneStart(1);
+PsychoPyMarkers.StimulusStartTime(3) = rawdata.PTrialToneStart(1);
+PsychoPyMarkers.StimulusStopTime(3) = rawdata.PTrialToneStop(1);
 
 % practice trials and probes
 PsychoPyMarkersRowIdx = 4; % counter for rows in psychopymarkers
@@ -408,7 +300,8 @@ for MCTPRowIdx = min(find(~isnan(rawdata.PTrialToneStart))) : max(find(~isnan(ra
         
         PsychoPyMarkers.TriggerTime(PsychoPyMarkersRowIdx) = rawdata.PTrialTrigger(MCTPRowIdx);
         PsychoPyMarkers.PhotodiodeTime(PsychoPyMarkersRowIdx) = rawdata.PTrialPhotodiode(MCTPRowIdx);
-        PsychoPyMarkers.StimulusTime(PsychoPyMarkersRowIdx) = rawdata.PTrialToneStart(MCTPRowIdx);
+        PsychoPyMarkers.StimulusStartTime(PsychoPyMarkersRowIdx) = rawdata.PTrialToneStart(MCTPRowIdx);
+        PsychoPyMarkers.StimulusStopTime(PsychoPyMarkersRowIdx) = rawdata.PTrialToneStop(MCTPRowIdx);
 
         PsychoPyMarkersRowIdx = PsychoPyMarkersRowIdx + 1; % add to the row counter for PsychoPyMarkers
        
@@ -420,7 +313,8 @@ for MCTPRowIdx = min(find(~isnan(rawdata.PTrialToneStart))) : max(find(~isnan(ra
             PsychoPyMarkers.TriggerTime(PsychoPyMarkersRowIdx) = rawdata.PProbeTrigger(MCTPRowIdx);
             PsychoPyMarkers.PhotodiodeTime(PsychoPyMarkersRowIdx) = rawdata.PProbePhotodiode(MCTPRowIdx);
             % no stimulus so adding the blank from the next row
-            PsychoPyMarkers.StimulusTime(PsychoPyMarkersRowIdx) = rawdata.tone_number(MCTPRowIdx+1);
+            PsychoPyMarkers.StimulusStartTime(PsychoPyMarkersRowIdx) = rawdata.tone_number(MCTPRowIdx+1);
+             PsychoPyMarkers.StimulusStopTime(PsychoPyMarkersRowIdx) = rawdata.tone_number(MCTPRowIdx+1);
             
             PsychoPyMarkersRowIdx = PsychoPyMarkersRowIdx + 1; % add to the row counter for PsychoPyMarkers
             
@@ -429,7 +323,8 @@ for MCTPRowIdx = min(find(~isnan(rawdata.PTrialToneStart))) : max(find(~isnan(ra
             PsychoPyMarkers.Value(PsychoPyMarkersRowIdx) = {'S170'};
             PsychoPyMarkers.TriggerTime(PsychoPyMarkersRowIdx) = rawdata.POnOffTrigger(MCTPRowIdx);
             PsychoPyMarkers.PhotodiodeTime(PsychoPyMarkersRowIdx) = rawdata.POnOffPhotodiode(MCTPRowIdx);
-            PsychoPyMarkers.StimulusTime(PsychoPyMarkersRowIdx) = rawdata.tone_number(MCTPRowIdx+1);
+            PsychoPyMarkers.StimulusStartTime(PsychoPyMarkersRowIdx) = rawdata.tone_number(MCTPRowIdx+1);
+            PsychoPyMarkers.StimulusStopTime(PsychoPyMarkersRowIdx) = rawdata.tone_number(MCTPRowIdx+1);
 
             PsychoPyMarkersRowIdx = PsychoPyMarkersRowIdx + 1; % add to the row counter for PsychoPyMarkers
             
@@ -438,7 +333,8 @@ for MCTPRowIdx = min(find(~isnan(rawdata.PTrialToneStart))) : max(find(~isnan(ra
             PsychoPyMarkers.Value(PsychoPyMarkersRowIdx) = {'S170'};
             PsychoPyMarkers.TriggerTime(PsychoPyMarkersRowIdx) = rawdata.PAwareTrigger(MCTPRowIdx);
             PsychoPyMarkers.PhotodiodeTime(PsychoPyMarkersRowIdx) = rawdata.PAwarePhotodiode(MCTPRowIdx);
-            PsychoPyMarkers.StimulusTime(PsychoPyMarkersRowIdx) = rawdata.tone_number(MCTPRowIdx+1);
+            PsychoPyMarkers.StimulusStartTime(PsychoPyMarkersRowIdx) = rawdata.tone_number(MCTPRowIdx+1);
+            PsychoPyMarkers.StimulusStopTime(PsychoPyMarkersRowIdx) = rawdata.tone_number(MCTPRowIdx+1);
 
             PsychoPyMarkersRowIdx = PsychoPyMarkersRowIdx + 1; % add to the row counter for PsychoPyMarkers
             
@@ -447,7 +343,8 @@ for MCTPRowIdx = min(find(~isnan(rawdata.PTrialToneStart))) : max(find(~isnan(ra
             PsychoPyMarkers.Value(PsychoPyMarkersRowIdx) = {'S170'};
             PsychoPyMarkers.TriggerTime(PsychoPyMarkersRowIdx) = rawdata.PIntentTrigger(MCTPRowIdx);
             PsychoPyMarkers.PhotodiodeTime(PsychoPyMarkersRowIdx) = rawdata.PIntentPhotodiode(MCTPRowIdx);
-            PsychoPyMarkers.StimulusTime(PsychoPyMarkersRowIdx) = rawdata.tone_number(MCTPRowIdx+1);
+            PsychoPyMarkers.StimulusStartTime(PsychoPyMarkersRowIdx) = rawdata.tone_number(MCTPRowIdx+1);
+            PsychoPyMarkers.StimulusStopTime(PsychoPyMarkersRowIdx) = rawdata.tone_number(MCTPRowIdx+1);
 
             PsychoPyMarkersRowIdx = PsychoPyMarkersRowIdx + 1; % add to the row counter for PsychoPyMarkers
 
@@ -456,7 +353,8 @@ for MCTPRowIdx = min(find(~isnan(rawdata.PTrialToneStart))) : max(find(~isnan(ra
             PsychoPyMarkers.Value(PsychoPyMarkersRowIdx) = {'S 40'};
             PsychoPyMarkers.TriggerTime(PsychoPyMarkersRowIdx) = rawdata.ContinueTrigger(MCTPRowIdx);
             PsychoPyMarkers.PhotodiodeTime(PsychoPyMarkersRowIdx) = rawdata.ContinuePhotodiode(MCTPRowIdx);
-            PsychoPyMarkers.StimulusTime(PsychoPyMarkersRowIdx) = rawdata.tone_number(MCTPRowIdx+1);
+            PsychoPyMarkers.StimulusStartTime(PsychoPyMarkersRowIdx) = rawdata.tone_number(MCTPRowIdx+1);
+            PsychoPyMarkers.StimulusStopTime(PsychoPyMarkersRowIdx) = rawdata.tone_number(MCTPRowIdx+1);
 
             PsychoPyMarkersRowIdx = PsychoPyMarkersRowIdx + 1; % add to the row counter for PsychoPyMarkers
         end
@@ -474,8 +372,6 @@ end
 % so in each row, prioritize break, then block start, then trial info, then
 % probe info.
 
-
-
 for MCTRowIdx = min(find(~isnan(rawdata.TrialToneStart))):max(find(~isnan(rawdata.TrialToneStart)))
     
     % break
@@ -484,7 +380,8 @@ for MCTRowIdx = min(find(~isnan(rawdata.TrialToneStart))):max(find(~isnan(rawdat
         PsychoPyMarkers.Value(PsychoPyMarkersRowIdx) = {'S 30'};
         PsychoPyMarkers.TriggerTime(PsychoPyMarkersRowIdx) = str2double(rawdata.BreakTrigger(MCTRowIdx));
         PsychoPyMarkers.PhotodiodeTime(PsychoPyMarkersRowIdx) = str2double(rawdata.BreakPhotodiode(MCTRowIdx));
-        PsychoPyMarkers.StimulusTime(PsychoPyMarkersRowIdx) = rawdata.PProbeTrigger(MCTRowIdx); % anything with an NaN
+        PsychoPyMarkers.StimulusStartTime(PsychoPyMarkersRowIdx) = rawdata.PProbeTrigger(MCTRowIdx); % anything with an NaN
+        PsychoPyMarkers.StimulusStopTime(PsychoPyMarkersRowIdx) = rawdata.PProbeTrigger(MCTRowIdx);
 
         PsychoPyMarkersRowIdx = PsychoPyMarkersRowIdx + 1;
     end
@@ -495,7 +392,8 @@ for MCTRowIdx = min(find(~isnan(rawdata.TrialToneStart))):max(find(~isnan(rawdat
         PsychoPyMarkers.Value(PsychoPyMarkersRowIdx) = {'S 90'};
         PsychoPyMarkers.TriggerTime(PsychoPyMarkersRowIdx) = rawdata.BlockStartTrigger(MCTRowIdx);
         PsychoPyMarkers.PhotodiodeTime(PsychoPyMarkersRowIdx) = rawdata.BlockStartPhotodiode(MCTRowIdx);
-        PsychoPyMarkers.StimulusTime(PsychoPyMarkersRowIdx) = rawdata.BlockStartText(MCTRowIdx); % anything with an NaN
+        PsychoPyMarkers.StimulusStartTime(PsychoPyMarkersRowIdx) = rawdata.PProbeTrigger(MCTRowIdx); % anything with an NaN
+        PsychoPyMarkers.StimulusStopTime(PsychoPyMarkersRowIdx) = rawdata.PProbeTrigger(MCTRowIdx);
 
         PsychoPyMarkersRowIdx = PsychoPyMarkersRowIdx + 1;
     end
@@ -516,7 +414,8 @@ for MCTRowIdx = min(find(~isnan(rawdata.TrialToneStart))):max(find(~isnan(rawdat
 
         PsychoPyMarkers.TriggerTime(PsychoPyMarkersRowIdx) = rawdata.TrialTrigger(MCTRowIdx);
         PsychoPyMarkers.PhotodiodeTime(PsychoPyMarkersRowIdx) = rawdata.TrialPhotodiode(MCTRowIdx);
-        PsychoPyMarkers.StimulusTime(PsychoPyMarkersRowIdx) = rawdata.TrialToneStart(MCTRowIdx); % anything with an NaN
+        PsychoPyMarkers.StimulusStartTime(PsychoPyMarkersRowIdx) = rawdata.TrialToneStart(MCTRowIdx); % anything with an NaN
+        PsychoPyMarkers.StimulusStopTime(PsychoPyMarkersRowIdx) = rawdata.TrialToneStop(MCTRowIdx);
 
         PsychoPyMarkersRowIdx = PsychoPyMarkersRowIdx + 1;
     end
@@ -530,7 +429,8 @@ for MCTRowIdx = min(find(~isnan(rawdata.TrialToneStart))):max(find(~isnan(rawdat
         PsychoPyMarkers.PhotodiodeTime(PsychoPyMarkersRowIdx) = rawdata.ProbePhotodiode(MCTRowIdx);
         
         % filling in with an NaN
-        PsychoPyMarkers.StimulusTime(PsychoPyMarkersRowIdx) = rawdata.PProbeTrigger(MCTRowIdx);
+        PsychoPyMarkers.StimulusStartTime(PsychoPyMarkersRowIdx) = rawdata.PProbeTrigger(MCTRowIdx);
+        PsychoPyMarkers.StimulusStopTime(PsychoPyMarkersRowIdx) = rawdata.PProbeTrigger(MCTRowIdx);
         
         PsychoPyMarkersRowIdx = PsychoPyMarkersRowIdx + 1; % add to the row counter for PsychoPyMarkers
         
@@ -539,7 +439,8 @@ for MCTRowIdx = min(find(~isnan(rawdata.TrialToneStart))):max(find(~isnan(rawdat
         PsychoPyMarkers.Value(PsychoPyMarkersRowIdx) = {'S 70'};
         PsychoPyMarkers.TriggerTime(PsychoPyMarkersRowIdx) = rawdata.OnOffTrigger(MCTRowIdx);
         PsychoPyMarkers.PhotodiodeTime(PsychoPyMarkersRowIdx) = rawdata.OnOffPhotodiode(MCTRowIdx);
-        PsychoPyMarkers.StimulusTime(PsychoPyMarkersRowIdx) = rawdata.PProbeTrigger(MCTRowIdx);
+        PsychoPyMarkers.StimulusStartTime(PsychoPyMarkersRowIdx) = rawdata.PProbeTrigger(MCTRowIdx);
+        PsychoPyMarkers.StimulusStopTime(PsychoPyMarkersRowIdx) = rawdata.PProbeTrigger(MCTRowIdx);
 
         PsychoPyMarkersRowIdx = PsychoPyMarkersRowIdx + 1; % add to the row counter for PsychoPyMarkers
         
@@ -548,7 +449,8 @@ for MCTRowIdx = min(find(~isnan(rawdata.TrialToneStart))):max(find(~isnan(rawdat
         PsychoPyMarkers.Value(PsychoPyMarkersRowIdx) = {'S 70'};
         PsychoPyMarkers.TriggerTime(PsychoPyMarkersRowIdx) = rawdata.AwareTrigger(MCTRowIdx);
         PsychoPyMarkers.PhotodiodeTime(PsychoPyMarkersRowIdx) = rawdata.AwarePhotodiode(MCTRowIdx);
-        PsychoPyMarkers.StimulusTime(PsychoPyMarkersRowIdx) = rawdata.PProbeTrigger(MCTRowIdx);
+        PsychoPyMarkers.StimulusStartTime(PsychoPyMarkersRowIdx) = rawdata.PProbeTrigger(MCTRowIdx);
+        PsychoPyMarkers.StimulusStopTime(PsychoPyMarkersRowIdx) = rawdata.PProbeTrigger(MCTRowIdx);
 
         PsychoPyMarkersRowIdx = PsychoPyMarkersRowIdx + 1; % add to the row counter for PsychoPyMarkers
         
@@ -557,7 +459,8 @@ for MCTRowIdx = min(find(~isnan(rawdata.TrialToneStart))):max(find(~isnan(rawdat
         PsychoPyMarkers.Value(PsychoPyMarkersRowIdx) = {'S 70'};
         PsychoPyMarkers.TriggerTime(PsychoPyMarkersRowIdx) = rawdata.IntentTrigger(MCTRowIdx);
         PsychoPyMarkers.PhotodiodeTime(PsychoPyMarkersRowIdx) = rawdata.IntentPhotodiode(MCTRowIdx);
-        PsychoPyMarkers.StimulusTime(PsychoPyMarkersRowIdx) = rawdata.PProbeTrigger(MCTRowIdx);
+        PsychoPyMarkers.StimulusStartTime(PsychoPyMarkersRowIdx) = rawdata.PProbeTrigger(MCTRowIdx);
+        PsychoPyMarkers.StimulusStopTime(PsychoPyMarkersRowIdx) = rawdata.PProbeTrigger(MCTRowIdx);
 
         PsychoPyMarkersRowIdx = PsychoPyMarkersRowIdx + 1; % add to the row counter for PsychoPyMarkers
 
@@ -566,7 +469,8 @@ for MCTRowIdx = min(find(~isnan(rawdata.TrialToneStart))):max(find(~isnan(rawdat
         PsychoPyMarkers.Value(PsychoPyMarkersRowIdx) = {'S 40'};
         PsychoPyMarkers.TriggerTime(PsychoPyMarkersRowIdx) = rawdata.ContinueTrigger(MCTRowIdx);
         PsychoPyMarkers.PhotodiodeTime(PsychoPyMarkersRowIdx) = rawdata.ContinuePhotodiode(MCTRowIdx);
-        PsychoPyMarkers.StimulusTime(PsychoPyMarkersRowIdx) = rawdata.PProbeTrigger(MCTRowIdx);
+        PsychoPyMarkers.StimulusStartTime(PsychoPyMarkersRowIdx) = rawdata.PProbeTrigger(MCTRowIdx);
+        PsychoPyMarkers.StimulusStopTime(PsychoPyMarkersRowIdx) = rawdata.PProbeTrigger(MCTRowIdx);
 
         PsychoPyMarkersRowIdx = PsychoPyMarkersRowIdx + 1; % add to the row counter for PsychoPyMarkers
     end
@@ -578,13 +482,11 @@ PsychoPyMarkers.Label(PsychoPyMarkersRowIdx) = {'TaskEnd'};
 PsychoPyMarkers.Value(PsychoPyMarkersRowIdx) = {'S161'};
 PsychoPyMarkers.TriggerTime(PsychoPyMarkersRowIdx) = rawdata.PProbeTrigger(MCTRowIdx);
 PsychoPyMarkers.PhotodiodeTime(PsychoPyMarkersRowIdx) = rawdata.PProbeTrigger(MCTRowIdx);
-PsychoPyMarkers.StimulusTime(PsychoPyMarkersRowIdx) = rawdata.PProbeTrigger(MCTRowIdx);
-
+PsychoPyMarkers.StimulusStartTime(PsychoPyMarkersRowIdx) = rawdata.PProbeTrigger(MCTRowIdx);
+PsychoPyMarkers.StimulusStopTime(PsychoPyMarkersRowIdx) = rawdata.PProbeTrigger(MCTRowIdx);
 
 clear PsychoPyMarkersRowIdx MCTPRowIdx MCTRowIdx
         
-
-
 warning('on','all');
 
 %% Calculate time between beats according to psychopy Triggers, Photodiodes, and Stimuli
@@ -596,6 +498,8 @@ warning('on','all');
 % standardize as time stince the start of the task and find time difference
 % between all triggers
 
+fprintf('Calculating time between beats for psychopy data.\n')
+
 for PsychoPyMarkerRowIdx = 2:size(PsychoPyMarkers,1)
     % for all rows except the first
     PsychoPyMarkers.TriggerTimeSinceStart(PsychoPyMarkerRowIdx) = PsychoPyMarkers.TriggerTime(PsychoPyMarkerRowIdx) - PsychoPyMarkers.TriggerTime(find(strcmp('S160',PsychoPyMarkers.Value)));
@@ -604,19 +508,19 @@ for PsychoPyMarkerRowIdx = 2:size(PsychoPyMarkers,1)
     % trigger for the start of the task (where value is S160)
     % for stimuli there is no task start stimuli to compare to so can take
     % the average of timing for starting trigger and photodiode
-    PsychoPyMarkers.StimuliTimeSinceStart(PsychoPyMarkerRowIdx) = PsychoPyMarkers.StimulusTime(PsychoPyMarkerRowIdx) - ((PsychoPyMarkers.TriggerTime(find(strcmp('S160',PsychoPyMarkers.Value))) + PsychoPyMarkers.PhotodiodeTime(find(strcmp('S160',PsychoPyMarkers.Value))))/2);
+    PsychoPyMarkers.StimuliTimeSinceStart(PsychoPyMarkerRowIdx) = PsychoPyMarkers.StimulusStartTime(PsychoPyMarkerRowIdx) - ((PsychoPyMarkers.TriggerTime(find(strcmp('S160',PsychoPyMarkers.Value))) + PsychoPyMarkers.PhotodiodeTime(find(strcmp('S160',PsychoPyMarkers.Value))))/2);
     
 
     PsychoPyMarkers.TriggerTimeSincePrev(PsychoPyMarkerRowIdx) = PsychoPyMarkers.TriggerTime(PsychoPyMarkerRowIdx) - PsychoPyMarkers.TriggerTime(PsychoPyMarkerRowIdx - 1);
     PsychoPyMarkers.PhotodiodeTimeSincePrev(PsychoPyMarkerRowIdx) = PsychoPyMarkers.PhotodiodeTime(PsychoPyMarkerRowIdx) - PsychoPyMarkers.PhotodiodeTime(PsychoPyMarkerRowIdx - 1);
     % time since previous trigger is tricky for stimulus time as there are
     % many routines without stimuli.
-    if ~isnan(PsychoPyMarkers.StimulusTime(PsychoPyMarkerRowIdx))
+    if ~isnan(PsychoPyMarkers.StimulusStartTime(PsychoPyMarkerRowIdx))
         % if the current row has a stimulus
-        if ~isnan(PsychoPyMarkers.StimulusTime(PsychoPyMarkerRowIdx - 1))
+        if ~isnan(PsychoPyMarkers.StimulusStartTime(PsychoPyMarkerRowIdx - 1))
             % and the previous row has a stimulus
             % do the subtraction
-            PsychoPyMarkers.StimuliTimeSincePrev(PsychoPyMarkerRowIdx) = PsychoPyMarkers.StimulusTime(PsychoPyMarkerRowIdx) - PsychoPyMarkers.StimulusTime(PsychoPyMarkerRowIdx - 1);
+            PsychoPyMarkers.StimuliTimeSincePrev(PsychoPyMarkerRowIdx) = PsychoPyMarkers.StimulusStartTime(PsychoPyMarkerRowIdx) - PsychoPyMarkers.StimulusStartTime(PsychoPyMarkerRowIdx - 1);
         else
             % if the previous row has no data
             PsychoPyMarkers.StimuliTimeSincePrev(PsychoPyMarkerRowIdx) = NaN;
@@ -633,16 +537,9 @@ clear PsychoPyMarkerRowIdx
 % could also use label Practice Trial or Trial, but would need to remove
 % all of the S101 and S  1 valued markers.
 
-PsychoPyTrialTimes = [];
 
-for trigvalidx = 1:size(no1alltrialtrigvals,1)
-    PsychoPyTrialTimes = [PsychoPyTrialTimes; (PsychoPyMarkers((find(strcmp(no1alltrialtrigvals(trigvalidx),PsychoPyMarkers.Value))),9:11))];
-end
-
-clear trigvalidx
-
-PsychoPyMeanBeatTriggerTime = mean(PsychoPyTrialTimes.TriggerTimeSincePrev);
-PsychoPySDBeatTriggerTime = std(PsychoPyTrialTimes.TriggerTimeSincePrev);
+PsychoPyMeanBeatTriggerTime = mean(PsychoPyMarkers.TriggerTimeSincePrev,"omitnan");
+PsychoPySDBeatTriggerTime = std(PsychoPyMarkers.TriggerTimeSincePrev,"omitnan");
 PsychoPyMeanBeatTriggerTimeDifference = PsychoPyMeanBeatTriggerTime - 1.575;
 
 TimingDifferences.PsychoPyMeanTimeBetweenBeatTriggers(1) = PsychoPyMeanBeatTriggerTime;
@@ -652,8 +549,8 @@ TimingDifferences.PsychoPyMeanTimeBetweenBeatTriggerDifference = abs(PsychoPyMea
 fprintf(strcat("From PsychoPy data, average time between beat triggers is ", string(PsychoPyMeanBeatTriggerTime), "seconds (SD = ",string(PsychoPySDBeatTriggerTime),");\n"));
 fprintf(strcat("which differs from the desired timing of 1.575 seconds by ", string(PsychoPyMeanBeatTriggerTimeDifference), "seconds.\n"));
 
-PsychoPyMeanBeatPhotodiodeTime = mean(PsychoPyTrialTimes.PhotodiodeTimeSincePrev);
-PsychoPySDBeatPhotodiodeTime = std(PsychoPyTrialTimes.PhotodiodeTimeSincePrev);
+PsychoPyMeanBeatPhotodiodeTime = mean(PsychoPyMarkers.PhotodiodeTimeSincePrev,"omitnan");
+PsychoPySDBeatPhotodiodeTime = std(PsychoPyMarkers.PhotodiodeTimeSincePrev,"omitnan");
 PsychoPyMeanBeatPhotodiodeTimeDifference = PsychoPyMeanBeatPhotodiodeTime - 1.575;
 
 TimingDifferences.PsychoPyMeanTimeBetweenBeatPhotodiodes(1) = PsychoPyMeanBeatPhotodiodeTime;
@@ -663,8 +560,8 @@ TimingDifferences.PsychoPyMeanTimeBetweenBeatPhotodiodeDifference = abs(PsychoPy
 fprintf(strcat("From PsychoPy data, average time between beat photodiodes is ", string(PsychoPyMeanBeatPhotodiodeTime), "seconds (SD = ",string(PsychoPySDBeatPhotodiodeTime),");\n"));
 fprintf(strcat("which differs from the desired timing of 1.575 seconds by ", string(PsychoPyMeanBeatPhotodiodeTimeDifference), "seconds.\n"));
 
-PsychoPyMeanBeatStimuliTime = mean(PsychoPyTrialTimes.StimuliTimeSincePrev);
-PsychoPySDBeatStimuliTime = std(PsychoPyTrialTimes.StimuliTimeSincePrev);
+PsychoPyMeanBeatStimuliTime = mean(PsychoPyMarkers.StimuliTimeSincePrev,"omitnan");
+PsychoPySDBeatStimuliTime = std(PsychoPyMarkers.StimuliTimeSincePrev,"omitnan");
 PsychoPyMeanBeatStimuliTimeDifference = PsychoPyMeanBeatStimuliTime - 1.575;
 
 TimingDifferences.PsychoPyMeanTimeBetweenBeatStimuli = PsychoPyMeanBeatStimuliTime;
@@ -674,11 +571,14 @@ TimingDifferences.PsychoPyMeanTimeBetweenBeatStimuliDifference = abs(PsychoPyMea
 fprintf(strcat("From PsychoPy data, average time between beat sound is ", string(PsychoPyMeanBeatStimuliTime), "seconds (SD = ",string(PsychoPySDBeatStimuliTime),");\n"));
 fprintf(strcat("which differs from the desired timing of 1.575 seconds by ", string(PsychoPyMeanBeatStimuliTimeDifference), "seconds.\n"));
 
-clear nPsychoPyMean* PsychoPySD* PsychoPyTrialTimes
+clear PsychoPyMean* PsychoPySD*
 
 %% Find photodiode sample points
 
+fprintf('Determining photodiode time points.\n')
+
 % can graph data to see how the photodiodes look
+
 % figure;
 % plot(eeg(66,167900:273100))
 
@@ -715,6 +615,8 @@ EEGMarkers.PhotodiodeTime = EEGMarkers.PhotodiodeSample/500;
 
 %% Calculate time difference for EEG photodiodes
 
+fprintf('Calculating time between beats for EEG photodiode data.\n')
+
 for markerrowidx = 2:size(EEGMarkers,1)
     % for all rows except the first
     EEGMarkers.photodiodetimesincestart(markerrowidx) = EEGMarkers.PhotodiodeTime(markerrowidx) - EEGMarkers.PhotodiodeTime(find(strcmp('S160',EEGMarkers.value)));
@@ -727,6 +629,8 @@ end
 clear markerrowidx 
 
 %% Calculate Trial length according to photodiodes
+
+fprintf('Calculating trial length according to EEG photodiode data.\n')
 
 PhotodiodeTrialTimes = [];
 
@@ -747,10 +651,10 @@ TimingDifferences.EEGMeanTimeBetweenBeatPhotodiodeDifference = abs(EEGMeanBeatPh
 fprintf(strcat("From EEG data, average time between beat photodiodes is ", string(EEGMeanBeatPhotodiodeTime), " seconds (SD = ",string(EEGSDBeatPhotodiodeTime),");\n"));
 fprintf(strcat("which differs from the desired timing of 1.575 seconds by ", string(EEGMeanBeatPhotodiodeTimeDifference), " seconds.\n"));
 
-clear nEEGMean* EEGSD* PhotodiodeTrialTimes
+clear nEEGMean* EEGSD* PhotodiodeTrialTimes no1*
 
 %% Calculate time difference between triggers and photodiodes for EEG data
-
+fprintf('Calculating time differences between triggers and photodiodes in EEG data.\n')
 
 EEGMarkers.TriggerVPhotodiodeTime = EEGMarkers.PhotodiodeTime - EEGMarkers.time;
 
@@ -767,155 +671,42 @@ clear EEGMean* EEGSD*
 
 %% Calculate Time Differences Between Triggers, Photodiodes, and Stimuli according to psychopy
 
-        % MADE THE FOLLOWING SCRIPT BEFORE I MADE THE SCRIPT TO CREATE THE
-        % PSYCHOPYMARKERS TABLE. So could have used that in here instead
-        % and made a new column for these differences that skips over NaNs
-
-        % EASIEST TO TAKE PSYCHOPYMARKERS TABLE AND SUBTRACT ONE COLUMN
-        % FROM THE OTHER
-        % REMEMBER THAT PROBES FOR ONOFF AND AWARE DO NOT HAVE TIMING SET
-        % PROPERLY SO THE TIME DIFFERENCE IS NOT ACCURATE
+fprintf('Calculating time differences between psychopy trial markers.\n')
 
 PsychoPyMarkers.TriggerVPhotodiodeTime = PsychoPyMarkers.PhotodiodeTime - PsychoPyMarkers.TriggerTime;
-PsychoPyMarkers.TriggerVStimulusTime = PsychoPyMarkers.StimulusTime - PsychoPyMarkers.TriggerTime;
-PsychoPyMarkers.PhotodiodeVStimulusTime = PsychoPyMarkers.PhotodiodeTime - PsychoPyMarkers.StimulusTime;
+PsychoPyMarkers.TriggerVStimulusTime = PsychoPyMarkers.StimulusStartTime - PsychoPyMarkers.TriggerTime;
+PsychoPyMarkers.PhotodiodeVStimulusTime = PsychoPyMarkers.PhotodiodeTime - PsychoPyMarkers.StimulusStartTime;
 
-        % I didn't do this at first because I thought the NaNs would be an
-        % issue
-
-% between photodiodes, triggers, and stimuli
-
-% could just do it one by one
-% but if each row is a time difference, then I can't just subtract one
-% variable by another.
-
-%PsychoPyTimingDifferences = [];
-
-%PsychoPyTimingDifferences.Comparison(1) = 'Start Trigger vs Photodiode';
-%PsychoPyTimingDifferences.Difference(1) = 
-
-% could I put all of the photodiode parts in one column and their
-% corresponding triggers in another column?
-
-% could just take the columns of interest in groups, remove all NAs and
-% then combine into a larger array of two columns
-
-% but also need a row number to re-order things to match the EEG clean
-% markers data.
-
-for rawdatarowidx = 1:size(rawdata,1)
-    rawdata.rownumber(rawdatarowidx) =  double(rawdatarowidx);
-end
-
-% collect columns
-StartTimes = [rawdata.rownumber,rawdata.StartTrigger, rawdata.StartPhotodiode];
-SoundTestTimes = [rawdata.rownumber,rawdata.SoundTestTrigger, rawdata.SoundTestPhotodiode, rawdata.SoundTestToneStart];
-PracticeStartTimes = [rawdata.rownumber,rawdata.PracticeStartTrigger,rawdata.PracticeStartPhotodiode,rawdata.PracticeStartText];
-PracticeProbeIntroTimes = [rawdata.rownumber,rawdata.PProbeTrigger,rawdata.PProbePhotodiode];
-PracticeProbeOnOffTimes = [rawdata.rownumber,rawdata.POnOffTrigger, rawdata.POnOffPhotodiode];
-PracticeProbeAwareTimes = [rawdata.rownumber,rawdata.PAwareTrigger,rawdata.PAwarePhotodiode];
-PracticeProbeIntentTimes = [rawdata.rownumber,rawdata.PIntentTrigger,rawdata.PIntentPhotodiode];
-ContinueTimes = [rawdata.rownumber,rawdata.ContinueTrigger,rawdata.ContinuePhotodiode];
-BlockStartTimes = [rawdata.rownumber,rawdata.BlockStartTrigger,rawdata.BlockStartPhotodiode,rawdata.BlockStartText];
-ProbeIntroTimes = [rawdata.rownumber,rawdata.ProbeTrigger,rawdata.ProbePhotodiode];
-ProbeOnOffTimes = [rawdata.rownumber,rawdata.OnOffTrigger, rawdata.OnOffPhotodiode];
-ProbeAwareTimes = [rawdata.rownumber,rawdata.AwareTrigger,rawdata.AwarePhotodiode];
-ProbeIntentTimes = [rawdata.rownumber,rawdata.IntentTrigger,rawdata.IntentPhotodiode];
-PracticeTrialTimes = [rawdata.rownumber,rawdata.PTrialTrigger,rawdata.PTrialPhotodiode,rawdata.PTrialToneStart,rawdata.PTrialToneStop,rawdata.tone_number];
-TrialTimes = [rawdata.rownumber,rawdata.TrialTrigger,rawdata.TrialPhotodiode,rawdata.TrialToneStart,rawdata.TrialToneStop,rawdata.tone_number];
-% error with the following triggers and photodiodes being imported as cells
-% instead of doubles
-BreakTimes = [rawdata.rownumber, str2double(rawdata.BreakTrigger),str2double(rawdata.BreakPhotodiode)];
-EndTimes = [rawdata.rownumber,str2double(rawdata.EndTrigger),str2double(rawdata.EndPhotodiode)];
-
-% remove NAs
-StartTimes = StartTimes(find(~isnan(StartTimes(:,2))),:);
-SoundTestTimes = SoundTestTimes(find(~isnan(SoundTestTimes(:,2))),:);
-PracticeStartTimes = PracticeStartTimes(find(~isnan(PracticeStartTimes(:,2))),:);
-PracticeProbeIntroTimes = PracticeProbeIntroTimes(find(~isnan(PracticeProbeIntroTimes(:,2))),:);
-PracticeProbeOnOffTimes = PracticeProbeOnOffTimes(find(~isnan(PracticeProbeOnOffTimes(:,2))),:);
-PracticeProbeAwareTimes = PracticeProbeAwareTimes(find(~isnan(PracticeProbeAwareTimes(:,2))),:);
-PracticeProbeIntentTimes = PracticeProbeIntentTimes(find(~isnan(PracticeProbeIntentTimes(:,2))),:);
-ContinueTimes = ContinueTimes(find(~isnan(ContinueTimes(:,2))),:);
-BlockStartTimes = BlockStartTimes(find(~isnan(BlockStartTimes(:,2))),:);
-ProbeIntroTimes = ProbeIntroTimes(find(~isnan(ProbeIntroTimes(:,2))),:);
-ProbeOnOffTimes = ProbeOnOffTimes(find(~isnan(ProbeOnOffTimes(:,2))),:);
-ProbeAwareTimes = ProbeAwareTimes(find(~isnan(ProbeAwareTimes(:,2))),:);
-ProbeIntentTimes = ProbeIntentTimes(find(~isnan(ProbeIntentTimes(:,2))),:);
-BreakTimes = BreakTimes(find(~isnan(BreakTimes(:,2))),:);
-EndTimes = EndTimes(find(~isnan(EndTimes(:,2))),:);
-PracticeTrialTimes = PracticeTrialTimes(find(~isnan(PracticeTrialTimes(:,2))),:);
-TrialTimes = TrialTimes(find(~isnan(TrialTimes(:,2))),:);
-
-
-clear rawdatarowidx
-
-% rather than make many loops to try to add a new column to each without
-% stimuli to be a stimulus dummy, I'm just going to make several arrays for
-% each comparison
-
-% trigger vs photodiode
-
-TriggerVPhotodiode = table;
-TriggerVPhotodiode.RowNumber = [StartTimes(:,1);SoundTestTimes(:,1);PracticeStartTimes(:,1);PracticeTrialTimes(:,1);PracticeProbeIntroTimes(:,1);
-    PracticeProbeOnOffTimes(:,1);PracticeProbeAwareTimes(:,1);PracticeProbeIntentTimes(:,1);ContinueTimes(:,1);BlockStartTimes(:,1);TrialTimes(:,1);
-    ProbeIntroTimes(:,1);%ProbeOnOffTimes(:,1);ProbeAwareTimes(:,1);
-    ProbeIntentTimes(:,1);BreakTimes(:,1);EndTimes(:,1)];
-TriggerVPhotodiode.TriggerTime = [StartTimes(:,2);SoundTestTimes(:,2);PracticeStartTimes(:,2);PracticeTrialTimes(:,2);PracticeProbeIntroTimes(:,2);
-    PracticeProbeOnOffTimes(:,2);PracticeProbeAwareTimes(:,2);PracticeProbeIntentTimes(:,2);ContinueTimes(:,2);BlockStartTimes(:,2);TrialTimes(:,2);
-    ProbeIntroTimes(:,2);%ProbeOnOffTimes(:,2);ProbeAwareTimes(:,2);
-    ProbeIntentTimes(:,2);BreakTimes(:,2);EndTimes(:,2)];
-TriggerVPhotodiode.PhotodiodeTime = [StartTimes(:,3);SoundTestTimes(:,3);PracticeStartTimes(:,3);PracticeTrialTimes(:,3);PracticeProbeIntroTimes(:,3);
-    PracticeProbeOnOffTimes(:,3);PracticeProbeAwareTimes(:,3);PracticeProbeIntentTimes(:,3);ContinueTimes(:,3);BlockStartTimes(:,3);TrialTimes(:,3);
-    ProbeIntroTimes(:,3);%ProbeOnOffTimes(:,3);ProbeAwareTimes(:,3);
-    ProbeIntentTimes(:,3);BreakTimes(:,3);EndTimes(:,3)];
-TriggerVPhotodiode.TimeDifference = TriggerVPhotodiode.TriggerTime - TriggerVPhotodiode.PhotodiodeTime;
-
-        % THESE TIMES LOOK MESSY
         % TRIGGERS FOR THE ONOFF AND AWARE ACTUAL PROBES ARE RELATIVE TO
         % ROUTINE START; PHOTODIODE IS RELATIVE TO TASK START.
-        % can't think of a good way to deal with this, removing those
-        % doubles from the table for now
 
-% trigger vs stimuli
+% store rows to omit
+OnOffRows = strcmp('Probe OnOff',PsychoPyMarkers.Label);
+AwareRows = strcmp('Probe Aware',PsychoPyMarkers.Label);
+OmitProbeRows = OnOffRows | AwareRows;
+ 
+PPTriggerVPhotoMean = mean(PsychoPyMarkers.TriggerVPhotodiodeTime(~OmitProbeRows),"omitnan");
+PPTriggerVPhotoSD = std(PsychoPyMarkers.TriggerVPhotodiodeTime(~OmitProbeRows), "omitnan");
 
-TriggerVStimuli = table;
-TriggerVStimuli.RowNumber = [SoundTestTimes(:,1);PracticeStartTimes(:,1);PracticeTrialTimes(:,1);BlockStartTimes(:,1);TrialTimes(:,1)];
-TriggerVStimuli.TriggerTime = [SoundTestTimes(:,2);PracticeStartTimes(:,2);PracticeTrialTimes(:,2);BlockStartTimes(:,2);TrialTimes(:,2)];
-TriggerVStimuli.StimuliTime = [SoundTestTimes(:,4);PracticeStartTimes(:,4);PracticeTrialTimes(:,4);BlockStartTimes(:,4);TrialTimes(:,4)];
-TriggerVStimuli.TimeDifference = TriggerVStimuli.TriggerTime - TriggerVStimuli.StimuliTime;
+PPTriggerVStimMean = mean(PsychoPyMarkers.TriggerVStimulusTime(~OmitProbeRows),"omitnan");
+PPTriggerVStimSD = std(PsychoPyMarkers.TriggerVStimulusTime(~OmitProbeRows),"omitnan");
 
-% photodiode vs stimuli
-
-PhotodiodeVStimuli = table;
-PhotodiodeVStimuli.RowNumber = [SoundTestTimes(:,1);PracticeStartTimes(:,1);PracticeTrialTimes(:,1);BlockStartTimes(:,1);TrialTimes(:,1)];
-PhotodiodeVStimuli.PhotodiodeTime = [SoundTestTimes(:,3);PracticeStartTimes(:,3);PracticeTrialTimes(:,3);BlockStartTimes(:,3);TrialTimes(:,3)];
-PhotodiodeVStimuli.StimuliTime = [SoundTestTimes(:,4);PracticeStartTimes(:,4);PracticeTrialTimes(:,4);BlockStartTimes(:,4);TrialTimes(:,4)];
-PhotodiodeVStimuli.TimeDifference = PhotodiodeVStimuli.PhotodiodeTime - PhotodiodeVStimuli.StimuliTime;
-
-% PP for psychopy
-
-PPTriggerVPhotoMean = mean(TriggerVPhotodiode.TimeDifference);
-PPTriggerVPhotoSD = std(TriggerVPhotodiode.TimeDifference);
-
-PPTriggerVStimMean = mean(TriggerVStimuli.TimeDifference);
-PPTriggerVStimSD = std(TriggerVStimuli.TimeDifference);
-
-PPPhotoVStimMean = mean(PhotodiodeVStimuli.TimeDifference);
-PPPhotoVStimSD = std(PhotodiodeVStimuli.TimeDifference);
+PPPhotoVStimMean = mean(PsychoPyMarkers.PhotodiodeVStimulusTime(~OmitProbeRows),"omitnan");
+PPPhotoVStimSD = std(PsychoPyMarkers.PhotodiodeVStimulusTime(~OmitProbeRows),"omitnan");
 
 TimingDifferences.PsychoPyMeanTimeBetweenTriggersAndPhotodiode = PPTriggerVPhotoMean;
 TimingDifferences.PsychoPyMeanTimeBetweenTriggersAndStimuli = PPTriggerVStimMean;
 TimingDifferences.PsychoPyMeanTimeBetweenPhotodiodeAndStimuli = PPPhotoVStimMean;
 
-
 fprintf(strcat("From psychopy data, average time between corresponding triggers and photodiodes is ", string(PPTriggerVPhotoMean), "seconds, (SD = ",string(PPTriggerVPhotoSD),").\n"));
 fprintf(strcat("From psychopy data, average time between corresponding triggers and stimuli is ", string(PPTriggerVStimMean), "seconds, (SD = ",string(PPTriggerVStimSD),").\n"));
 fprintf(strcat("From psychopy data, average time between corresponding photodiodes and stimuli is ", string(PPPhotoVStimMean), "seconds, (SD = ",string(PPPhotoVStimSD),").\n"));
 
-clear Probe*
+clear Probe* OnOffRows AwareRows
 
 %% Calculate psychopy tone length
+
+fprintf('Calculating trial length according to psychopy markers data.\n')
 
 % if they have SoundTestToneEnd, SoundTestToneEnd - SoundTestToneStart
 % should be 120 seconds
@@ -923,17 +714,11 @@ clear Probe*
 % TrialToneStart, TrialToneStop
 % not all trial tones will have tone stop recorded for some reason
 
-% start and end tones
-StartStopTone = table;
-StartStopTone.StartTime = [PracticeTrialTimes(:,4);TrialTimes(:,4)];
-StartStopTone.StopTime = [PracticeTrialTimes(:,5);TrialTimes(:,5)];
+PsychoPyMarkers.StartVStop = PsychoPyMarkers.StimulusStopTime - PsychoPyMarkers.StimulusStartTime;
 
-% remove NAs from Start and Stop
-StartStopTone = StartStopTone(find((~isnan(StartStopTone.StopTime))),:);
-StartStopTone.Difference = StartStopTone.StopTime - StartStopTone.StartTime;
 
-PPStartStopMean = mean(StartStopTone.Difference);
-PPStartStopSD = std(StartStopTone.Difference);
+PPStartStopMean = mean(PsychoPyMarkers.StartVStop,"omitnan");
+PPStartStopSD = std(PsychoPyMarkers.StartVStop,"omitnan");
 PPStartStopDiff = PPStartStopMean - 0.075;
 
 TimingDifferences.PsychoPyMeanToneLength = PPStartStopMean;
@@ -958,9 +743,6 @@ EEGMarkers = EEGMarkers((1:(find(strcmp('S161',EEGMarkers.value)))),:);
 % exist.
 
 warning('off','all');
-
-
-CombinedMarkers = table;
 
 PsychoPyMarkersRowCounter = 1;
 
@@ -989,7 +771,7 @@ for MarkersRowIdx = 1:(size(EEGMarkers,1))
 
         CombinedMarkers.PsyTriggerTime(MarkersRowIdx) = PsychoPyMarkers.TriggerTime(PsychoPyMarkersRowCounter);
         CombinedMarkers.PsyPhotodiodeTime(MarkersRowIdx) = PsychoPyMarkers.PhotodiodeTime(PsychoPyMarkersRowCounter);
-        CombinedMarkers.PsyStimulusTime(MarkersRowIdx) = PsychoPyMarkers.StimulusTime(PsychoPyMarkersRowCounter);
+        CombinedMarkers.PsyStimulusTime(MarkersRowIdx) = PsychoPyMarkers.StimulusStartTime(PsychoPyMarkersRowCounter);
 
         PsychoPyMarkersRowCounter = PsychoPyMarkersRowCounter + 1;
 
@@ -999,50 +781,54 @@ end
 
 warning('on','all');
 
-% get psychopy trigger vs stim, photodiode vs stim, trigger vs photodiode
-% get EEG trigger vs photodiode
-
-%% Adjust to have the same starting times.
-
-% calibrating on Stimulus Time
-%TriggerAdjust = CombinedMarkers.EEGTriggerTime(2) - CombinedMarkers.PsyStimulusTime(2);
-%PhotodiodeAdjust = CombinedMarkers.EEGPhotodiodeTime(2) - CombinedMarkers.PsyStimulusTime(2);
-
-%CombinedMarkers.AdjustedEEGTriggerTime = CombinedMarkers.EEGTriggerTime - TriggerAdjust;
-%CombinedMarkers.AdjustedEEGPhotodiodeTime = CombinedMarkers.EEGPhotodiodeTime - PhotodiodeAdjust;
-
-    % THIS MAKES THE ADJUSTED EEG TIME COME BEFORE THE PSYCHOPY TIMES WHICH
-    % DOESN'T MAKE SENSE.
+clear PsychoPyMarkersRowCounter MarkersRowIdx
 
 %% Compare psychopy times to eeg times
 
-% Photodiode is supposed to be at the same time as the sound
-% trigger is conditional on sound
-
-% trigger - photodiode
-% if it equals negative, the photodiode was earlier
-% if it equals postiive, the trigger was earlier.
-
-% EEG trigger - photodiode = negative every time; while psychopy difference
-% is positive on instructions and probes and 0 on trials.
-
-% Except the probes for onoff and aware that are miscalibrated.
-
-% can at least check whether timing is consistent between the two
+% the times may not have equal scales in terms of time 0 being different
+% for the EEG data and the psychopy data, but the importance is to look at
+% consistency.
 
 CombinedMarkers.EEGVPsyTrigger = CombinedMarkers.EEGTriggerTime - CombinedMarkers.PsyTriggerTime;
 CombinedMarkers.EEGVPsyPhoto = CombinedMarkers.EEGPhotodiodeTime - CombinedMarkers.PsyPhotodiodeTime;
 CombinedMarkers.EEGTriggerVPhotodiode = CombinedMarkers.EEGTriggerTime - CombinedMarkers.EEGPhotodiodeTime;
 CombinedMarkers.PsyTriggerVPhotodiode = CombinedMarkers.PsyTriggerTime - CombinedMarkers.PsyPhotodiodeTime;
 
-%% Export
+VTriggerMean = mean(CombinedMarkers.EEGVPsyTrigger,"omitnan");
+VTriggerSD = std(CombinedMarkers.EEGVPsyTrigger,"omitnan");
 
-% just going to export the table
+TimingDifferences.EEGVPsyTriggerMean = VTriggerMean;
+TimingDifferences.EEGVPsyTriggerSD = VTriggerSD;
 
-writetable(CombinedMarkers,"RAD_DEMO_CombinedMarkerTiming.xlsx")
+fprintf(strcat("The average difference between the EEG trigger timing and psychopy trigger timing is ", string(VTriggerMean), "seconds, (SD = ",string(VTriggerSD),").\n"));
 
-% Remember that onoff and aware probe timing is off!
+
+VPhotodiodeMean = mean(CombinedMarkers.EEGVPsyPhoto,"omitnan");
+VPhotodiodeSD = std(CombinedMarkers.EEGVPsyPhoto,"omitnan");
+
+TimingDifferences.EEGVPsyPhotodiodeMean = VPhotodiodeMean;
+TimingDifferences.EEGVPsyPhotodiodeSD = VPhotodiodeSD;
+
+fprintf(strcat("The average difference between the EEG photodiode timing and psychopy photodiode timing is ", string(VPhotodiodeMean), "seconds, (SD = ",string(VPhotodiodeSD),").\n"));
+
+
+EEGTriggerVPhotodiodeMean = mean(CombinedMarkers.EEGTriggerVPhotodiode,"omitnan");
+EEGTriggerVPhotodiodeSD = std(CombinedMarkers.EEGTriggerVPhotodiode,"omitnan");
+
+TimingDifferences.EEGTriggerVPhotodiodeMean = EEGTriggerVPhotodiodeMean;
+TimingDifferences.EEGTriggerVPhotodiodeSD = EEGTriggerVPhotodiodeSD;
+
+fprintf(strcat("The average difference between the EEG trigger photodiode timing is ", string(EEGTriggerVPhotodiodeMean), "seconds, (SD = ",string(EEGTriggerVPhotodiodeSD),").\n"));
+
+
+PsychoPyTriggerVPhotodiodeMean = mean(CombinedMarkers.PsyTriggerVPhotodiode(~OmitProbeRows),"omitnan");
+PsychoPyTriggerVPhotodiodeSD = std(CombinedMarkers.PsyTriggerVPhotodiode(~OmitProbeRows),"omitnan");
+
+TimingDifferences.PsychoPyTriggerVPhotodiodeMean = PsychoPyTriggerVPhotodiodeMean;
+TimingDifferences.PsychoPyTriggerVPhotodiodeSD = PsychoPyTriggerVPhotodiodeSD;
+
+fprintf(strcat("The average difference between the PsychoPy trigger and photodiode timing is ", string(PsychoPyTriggerVPhotodiodeMean), "seconds, (SD = ",string(PsychoPyTriggerVPhotodiodeSD),").\n"));
 
 %% Clear everything else
 
-clear LaptopOrDesktop
+clear *Rows LaptopOrDesktop *Mean *SD 
