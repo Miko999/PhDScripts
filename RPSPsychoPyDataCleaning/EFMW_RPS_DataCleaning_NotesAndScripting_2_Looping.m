@@ -47,6 +47,8 @@
 % Only import variable names that are of use for data cleaning.
 % Edit the task to have variable names and save variables in a way that
 % makes indexing easier
+% dummies may not have been necessary to keep, since correct response is
+% included in the conditions for some tasks
 
 %% Versions and Packages
 

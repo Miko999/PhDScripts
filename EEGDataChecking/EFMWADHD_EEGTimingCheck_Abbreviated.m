@@ -100,6 +100,7 @@ rawdata = renamevars(rawdata,["TaskStartPhotoDiode.started","TaskStartPhotoDiode
 fprintf('Relabelling data columns of interest\n')
 
 % if they did not make an error during practice
+% Note older files can have 'signal' instead of trigger.
 if isempty(find(strcmp("practiceprobetrigger.started",rawdata.Properties.VariableNames),1)) % if they made an error, this would not be empty
     rawdata = renamevars(rawdata,["StartTrigger.started","TaskStartPhotodiode_1.started","SoundTest_sound.started","SoundTestTrigger.started", ...
         "SoundTestPhotodiode_1.started","practice_getready.started","PracticeStartTrigger.started", ...
