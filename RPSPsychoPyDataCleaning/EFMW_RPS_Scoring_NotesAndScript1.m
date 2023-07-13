@@ -2,7 +2,7 @@
 
 % Chelsie H.
 % Started: June 28, 2023
-% Last updated: July 10, 2023
+% Last updated: July 13, 2023
 % Last tested: (once script is complete)
 
     % Purpose: 
@@ -60,6 +60,12 @@
 % Add in thresholds for practices
 % SymSpan could add script for determining number of series with all
 % correct recall
+% eventually all scores will need to be combined and z-scored.
+% CHECK WHETHER Z-TRANSFORMING DATA BEFORE CALCULTING d' MAKES A
+% DIFFERENCE.
+
+% may need to check criteria for removing MCT thought probes if they come
+% right after another one.
 
 %% Versions and Packages
 
@@ -280,10 +286,10 @@ end
 
 
 % calculate hit rate
-SARTPHitRate = SARTPHits / SARTPNonTargets;
+SARTPHitRate = SARTPHits / SARTPNonTargets; % because they should respond to non-targets
 
 % calculate false alarm rate
-SARTPFARate = SARTPFAs / SARTPTargets;
+SARTPFARate = SARTPFAs / SARTPTargets; % because they should not respond to targets
 
 % if hit rate or false alarm rate is 0
 if SARTPHitRate == 0
@@ -313,11 +319,11 @@ SARTPSDRT = std(SARTPData.SARTPRT,"omitnan");
 % since we only want correct trials we could nest this into the previous
 % loop
 
-SARTPMeanHitRT = mean(SARTPRTHit,"omitnan");
-SARTPSDHitRT = std(SARTPRTHit,"omitnan");
+SARTPHitMeanRT = mean(SARTPRTHit,"omitnan");
+SARTPHitSDRT = std(SARTPRTHit,"omitnan");
 
-SARTPMeanFART = mean(SARTPRTFA,"omitnan");
-SARTPSDFART = std(SARTPRTFA,"omitnan");
+SARTPFAMeanRT = mean(SARTPRTFA,"omitnan");
+SARTPFASDRT = std(SARTPRTFA,"omitnan");
 
 % if they made no correct or incorrect key presses, the mean and SD will be
 % NaN
@@ -416,11 +422,11 @@ SARTSDRT = std(SARTData.SARTRT,"omitnan");
 % since we only want correct trials we could nest this into the previous
 % loop
 
-SARTMeanHitRT = mean(SARTRTHit,"omitnan");
-SARTSDHitRT = std(SARTRTHit,"omitnan");
+SARTHitMeanRT = mean(SARTRTHit,"omitnan");
+SARTHitSDRT = std(SARTRTHit,"omitnan");
 
-SARTMeanFART = mean(SARTRTFA,"omitnan");
-SARTSDFART = std(SARTRTFA,"omitnan");
+SARTFAMeanRT = mean(SARTRTFA,"omitnan");
+SARTFASDRT = std(SARTRTFA,"omitnan");
 
 % if they made no correct or incorrect key presses, the mean and SD will be
 % NaN
@@ -968,7 +974,10 @@ end
 % stimuli
 
 % separately and together for 1-back and 2-back, Some studies calculate an
-% average across n-back loads...
+% average across n-back loads.
+% paper referenced in preregistration calculated d-prime for each n-level
+% for the n-back and averaged across these. d-prime was also calculated
+% using z-scores rather than raw data...
 
 % need to calculate
 % number of trials can be taken from the counters
@@ -988,14 +997,12 @@ end
 % if hit rate or false alarm rate is 1
     % subtract 0.01
 
-        % HAVE TO DECIDE HOW 1-BACK AND 2-BACK WILL BE COMBINED OR IF WE
-        % WANT TO CHECK CEILING BEFORE COMBINING.
-
 
 %% Score Practice NBack
 
 % Actual NBack has an indicator for which trials are targets but the
-% practices do not.
+% practices do not. The practices are always the same sequence with the
+% same number of targets.
 
 % Store Reaction Time
 NBack1PHitRT = [];
@@ -1006,8 +1013,8 @@ NBack2PFART = [];
 % Counters for correct trials
 NBack1PHits = 0;
 NBack1PFAs = 0;
-NBack2Hits = 0;
-NBack2FAs = 0;
+NBack2PHits = 0;
+NBack2PFAs = 0;
 
 % This is just going to be a mess of if loops for now
 
@@ -1047,17 +1054,17 @@ for NBackPIdx = 1:size(NBackPData,1)
         end
 
     % If it's a 2-back trial
-    elseif ~isnan(NBackPData.NBack2PTrial(NBackIdx))
+    elseif ~isnan(NBackPData.NBack2PTrial(NBackPIdx))
         % check if the current trial is a target
         % Except for when NBack2PTrial = 1 or 2 (dummies)
-        if NBackPData.NBack2PTrial(NBackIdx) ~= 1 && NBackPData.NBack2PTrial(NBackIdx) ~= 2
+        if NBackPData.NBack2PTrial(NBackPIdx) ~= 1 && NBackPData.NBack2PTrial(NBackPIdx) ~= 2
             % if NBackPStim matches the NBackPStim two trials back, it's
             % a target
             if strcmp(NBackPData.NBackPStim(NBackPIdx),NBackPData.NBackPStim(NBackPIdx - 2))
                 % so if NBack2PResp is 'space' this is a hit
-                if strcmp('space',NBackPData.NBack2PResp(NBackIdx))
+                if strcmp('space',NBackPData.NBack2PResp(NBackPIdx))
                     % add to hit counter
-                    NBack2Hits = NBack2Hits + 1;
+                    NBack2PHits = NBack2PHits + 1;
                     % add to hit RT storage
                     NBack2PHitRT = [NBack2PHitRT; NBackPData.NBack2PRT(NBackPIdx)];
                     % mark as correct
@@ -1071,7 +1078,7 @@ for NBackPIdx = 1:size(NBackPData,1)
                 % and they pressed 'space' it's a false alarm
                 if strcmp('space',NBackPData.NBack2PResp(NBackPIdx))
                     % add to the false alarm counter
-                    NBack2FAs = NBack2FAs + 1;
+                    NBack2PFAs = NBack2PFAs + 1;
                     % add to the false alarm RT storage
                     NBack2PFART = [NBack2PFART; NBackPData.NBack2PRT(NBackPIdx)];
                     % mark as incorrect
@@ -1082,30 +1089,228 @@ for NBackPIdx = 1:size(NBackPData,1)
     end
 end
 
-% number of 1 back practice trials is the maximum of NBack1PTrial minus 1
-% number of 2 back practice trials is the maximum of NBack2PTrial minus 2
+% number of practice targets (for hits); and nontargets (for false alarms)
+NBack1PTargets = 2;
+NBack2PTargets = 3;
+NBack1PNonTargets = 8;
+NBack2PNonTargets = 7;
+
+% hit rate = correct responses to target/ total number of targets
+NBack1PHitRate = NBack1PHits/NBack1PTargets;
+NBack2PHitRate = NBack2PHits/NBack2PTargets;
+
+% false alarm rate = incorrect response to non-target / non-targets
+NBack1PFARate = NBack1PFAs/NBack1PNonTargets;
+NBack2PFARate = NBack2PFAs/NBack2PNonTargets;
+
+% could combine the following loops since we should be able to assume that
+% if Hit rate is 0; false alarm rate is 1; and vice versa, but just in case
+% I'm leaving them separate.
+
+% if hit rate or false alarm rate is 0
+if NBack1PHitRate == 0
+    % add 0.01
+    NBack1PHitRate = 0.01;
+% if hit rate or false alarm rate is 1
+elseif NBack1PHitRate == 1
+    % subtract 0.01    
+    NBack1PHitRate = 0.99;
+end
+
+if NBack2PHitRate == 0
+    NBack2PHitRate = 0.01;
+elseif NBack2PHitRate == 1
+    NBack2PHitRate = 0.99;
+end
+
+if NBack1PFARate == 0
+    NBack1PFARate = 0.01;
+elseif NBack1PFARate == 1  
+    NBack1PFARate = 0.99;
+end
+
+if NBack2PFARate == 0
+    NBack2PFARate = 0.01;
+elseif NBack2PFARate == 1
+    NBack2PFARate = 0.99;
+end
+
+% measure of interest (d prime) = hit rate - false alarm rate
+
+NBack1PDPrime = NBack1PHitRate - NBack1PFARate;
+NBack2PDPrime = NBack2PHitRate - NBack2PFARate;
 
 % get average and SD for RT for 1-back hits and FAs, and 2-back hits and
 % FAs
+NBack1PHitMeanRT = mean(NBack1PHitRT,"omitnan");
+NBack1PHitSDRT = std(NBack1PHitRT,"omitnan");
+NBack1PFAMeanRT = mean(NBack1PFART,"omitnan");
+NBack1PFASDRT = std(NBack1PFART,"omitnan");
 
-% hit rate = correct responses to target/ total number of targets
-% false alarm rate = incorrect response to non-target / non-targets
-% measure of interest (d prime) = correct to target - incorrect
-% to non-target
-
-% if hit rate or false alarm rate is 0
-    % add 0.01
-% if hit rate or false alarm rate is 1
-    % subtract 0.01    
-
+NBack2PHitMeanRT = mean(NBack2PHitRT,"omitnan");
+NBack2PHitSDRT = std(NBack2PHitRT,"omitnan");
+NBack2PFAMeanRT = mean(NBack2PFART,"omitnan");
+NBack2PFASDRT = std(NBack2PFART,"omitnan");
 
 %% Store Practice NBack
 
+% clear NBack1P* NBack2P*
 
 %% Score Actual NBack
 
+% Store Reaction Time
+NBack1HitRT = [];
+NBack1FART = [];
+NBack2HitRT = [];
+NBack2FART = [];
+
+% Counters for correct trials
+NBack1Hits = 0;
+NBack1FAs = 0;
+NBack2Hits = 0;
+NBack2FAs = 0;
+
+NBack1Targets = 0;
+NBack1NonTargets = 0;
+NBack2Targets = 0;
+NBack2NonTargets = 0;
+
+% dummies are never marked as targets.
+% Loop to find hits, false alarms, and corresponding reaction times
+for NBackIdx = 1:size(NBackData,1)
+    % If it's a 1-back trial other than trials 1 and 2
+    if ~isnan(NBackData.NBack1Trial(NBackIdx)) && NBackData.NBack1Trial(NBackIdx) ~= 1 && NBackData.NBack1Trial(NBackIdx) ~= 2
+        % check if the current trial is a target
+        % if it is a target
+        if NBackData.Target(NBackIdx) == 1
+            % add to target counter
+            NBack1Targets = NBack1Targets + 1;
+            % and they responded
+            if strcmp('space',NBackData.NBack1Resp(NBackIdx))
+                % add to hit counter
+                NBack1Hits = NBack1Hits + 1;
+                % add to RT storage
+                NBack1HitRT = [NBack1HitRT; NBackData.NBack1RT(NBackIdx)];
+                % mark as correct
+                NBackData.NBackAccuracyCheck(NBackIdx) = "correct";
+            % and they did not respond
+            else
+                % it's a miss
+                NBackData.NBackAccuracyCheck(NBackIdx) = "miss";
+            end
+        % if it is not a target
+        else
+            % and they responded
+            if strcmp('space',NBackData.NBack1Resp(NBackIdx))
+                % add to FA counter
+                NBack1FAs = NBack1FAs + 1;
+                % add to RT storage
+                NBack1FART = [NBack1FART; NBackData.NBack1RT(NBackIdx)];
+                % mark as incorrect
+                NBackData.NBackAccuracyCheck(NBackIdx) = "incorrect";
+            end
+            % if it is not a target or a dummy
+            if NBackData.Target(NBackIdx) == 0
+                % add to non-target counter
+                NBack1NonTargets = NBack1NonTargets + 1;
+            end
+        end
+    % If it's a 2-back trial other than trials 1 and 2
+    elseif ~isnan(NBackData.NBack2Trial(NBackIdx)) && NBackData.NBack2Trial(NBackIdx) ~= 1 && NBackData.NBack2Trial(NBackIdx) ~= 2
+        % check if the current trial is a target
+        if NBackData.Target(NBackIdx) == 1
+            % add to target counter
+            NBack2Targets = NBack2Targets + 1;
+            % and they responded
+            if strcmp('space',NBackData.NBack2Resp(NBackIdx))
+                % add to hit counter
+                NBack2Hits = NBack2Hits + 1;
+                % add to RT storage
+                NBack2HitRT = [NBack2HitRT; NBackData.NBack2RT(NBackIdx)];
+                % mark as correct
+                NBackData.NBackAccuracyCheck(NBackIdx) = "correct";
+            % and they did not respond
+            else
+                % it's a miss
+                NBackData.NBackAccuracyCheck(NBackIdx) = "miss";
+            end
+        % if it is not a target
+        else
+            % and they responded
+            if strcmp('space',NBackData.NBack2Resp(NBackIdx))
+                % add to FA counter
+                NBack2FAs = NBack2FAs + 1;
+                % add to RT storage
+                NBack2FART = [NBack2FART; NBackData.NBack2RT(NBackIdx)];
+                % mark as incorrect
+                NBackData.NBackAccuracyCheck(NBackIdx) = "incorrect";
+            end
+            % if it is not a target or a dummy
+            if NBackData.Target(NBackIdx) == 0
+                % add to non-target counter
+                NBack2NonTargets = NBack2NonTargets + 1;
+            end
+        end
+    end
+end
+
+% hit rate = correct responses to target/ total number of targets
+NBack1HitRate = NBack1Hits/NBack1Targets;
+NBack2HitRate = NBack2Hits/NBack2Targets;
+
+% false alarm rate = incorrect response to non-target / non-targets
+NBack1FARate = NBack1FAs/NBack1NonTargets;
+NBack2FARate = NBack2FAs/NBack2NonTargets;
+
+% if hit rate or false alarm rate is 0
+if NBack1HitRate == 0
+    % add 0.01
+    NBack1HitRate = 0.01;
+% if hit rate or false alarm rate is 1
+elseif NBack1HitRate == 1
+    % subtract 0.01    
+    NBack1HitRate = 0.99;
+end
+
+if NBack2HitRate == 0
+    NBack2HitRate = 0.01;
+elseif NBack2HitRate == 1
+    NBack2HitRate = 0.99;
+end
+
+if NBack1FARate == 0
+    NBack1FARate = 0.01;
+elseif NBack1FARate == 1  
+    NBack1FARate = 0.99;
+end
+
+if NBack2FARate == 0
+    NBack2FARate = 0.01;
+elseif NBack2FARate == 1
+    NBack2FARate = 0.99;
+end
+
+% measure of interest (d prime) = hit rate - false alarm rate
+
+NBack1DPrime = NBack1HitRate - NBack1FARate;
+NBack2DPrime = NBack2HitRate - NBack2FARate;
+
+% get average and SD for RT for 1-back hits and FAs, and 2-back hits and
+% FAs
+NBack1HitMeanRT = mean(NBack1HitRT,"omitnan");
+NBack1HitSDRT = std(NBack1HitRT,"omitnan");
+NBack1FAMeanRT = mean(NBack1FART,"omitnan");
+NBack1FASDRT = std(NBack1FART,"omitnan");
+
+NBack2HitMeanRT = mean(NBack2HitRT,"omitnan");
+NBack2HitSDRT = std(NBack2HitRT,"omitnan");
+NBack2FAMeanRT = mean(NBack2FART,"omitnan");
+NBack2FASDRT = std(NBack2FART,"omitnan");
+
 
 %% Store Actual NBack
+
+% clear NBack*
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %% Scoring Working Memory Notes
@@ -1113,19 +1318,75 @@ end
 % z-score transform and average symmetry span and n-back task scores
 % this will have to happen when all data is gathered.
 
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %% Scoring MCT Notes
-% check accuracy
+
+% record thought type from instructions responses
+% record if they made an error during the practice
+
+% check frequencies of
+% correct 20th beats
+% incorrect 20th beats
+% lost counts (if they didn't press up or left on the 25th beat)
+% timeouts
+% 'thought I was counting correctly'
+% 'hit the wrong key by accident'
+% 'hit the wrong key to continue'
+
 % proportion of probes where participant was MW
 % proportion of probes where participant was MW and aware/unaware
 % proportion of probes where participant was MW and had
 % intentional/unintentional thoughts
 
-% will want to get total probes for the record as well
-% total probes of each type (miscount, lost count, time out)
+% so need number of probes
+% and number of responses of each type
 
-% percentage of trials where the participant did not respond
+% also total probes of each type (miscount, lost count, time out)
 
-%% OUTPUT
+% and trials where participant did not respond
+
+%% Score Practice MCT
+
+% can store probe response information from introduction
+
+% check accuracy (and if they made an error during the practice
+
+% proportion of probes where participant was MW
+% proportion of probes where participant was MW and aware/unaware
+% proportion of probes where participant was MW and had
+% intentional/unintentional thoughts
+
+% so need number of probes
+% and number of responses of each type
+
+% also total probes of each type (miscount, lost count, time out)
+
+% and trials where participant did not respond
+
+%% Store Practice MCT
+
+%% Score Actual MCT
+
+% can store probe response information from introduction
+% did not include scoring code to re-code practice probe
+
+% check accuracy (and if they made an error during the practice
+
+% proportion of probes where participant was MW
+% proportion of probes where participant was MW and aware/unaware
+% proportion of probes where participant was MW and had
+% intentional/unintentional thoughts
+
+% so need number of probes
+% and number of responses of each type
+
+% also total probes of each type (miscount, lost count, time out)
+
+% and trials where participant did not respond
+
+%% Store Actual MCT
+
+%% Add Session Info and Stored Scores to Output Spreadsheet
 % will be like task info, loading in a file and adding all new information
 % to it.
 

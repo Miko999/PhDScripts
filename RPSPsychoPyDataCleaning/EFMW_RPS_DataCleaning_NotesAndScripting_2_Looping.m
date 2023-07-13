@@ -2,8 +2,8 @@
 
 % Chelsie H.
 % Started: November 8, 2022
-% Last updated: June 21, 2023
-% Last tested: June 28, 2023
+% Last updated: July 13, 2023
+% Last tested: July 13, 2023
 
     % Purpose: 
 % Record task and participant information to a Task Info spreadsheet
@@ -1184,7 +1184,7 @@ for filesidx = 1:size(filecell,2)
             % for each probe row
             for MCTPProbeRIdx = 1:height(MCTPProbeRows)
                 % take that row number
-                MCTPProbeRowNum = MCTProbeRows(MCTPProbeRIdx);
+                MCTPProbeRowNum = MCTPProbeRows(MCTPProbeRIdx);
                 % add the trial for the next row to this row
                 MCTPData.("MCTPTrial")(MCTPProbeRowNum) = MCTPData.("MCTPTrial")(MCTPProbeRowNum +1);
                 % change the next row's trial number to NaN
@@ -1390,6 +1390,25 @@ for filesidx = 1:size(filecell,2)
     end
     
     clear *Idx
+
+% recode the instruction probe response as well.
+if contains(MCTPData.("MCTInstProbeOnOffResp"){1},'left')
+    MCTPData.("MCTInstProbeOnOffResp"){1} = 'Unaware';
+elseif contains(MCTPData.("MCTInstProbeOnOffResp"){1},'right')
+    MCTPData.("MCTInstProbeOnOffResp"){1} = 'MW';
+end
+
+if contains(MCTPData.("MCTInstProbeAwareResp"){1},'left')
+    MCTPData.("MCTInstProbeAwareResp"){1} = 'OnTask';
+elseif contains(MCTPData.("MCTInstProbeAwareResp"){1},'right')
+    MCTPData.("MCTInstProbeAwareResp"){1} = 'Aware';
+end
+
+if contains(MCTPData.("MCTInstProbeIntentResp"){1},'left')
+    MCTPData.("MCTInstProbeIntentResp"){1} = 'Intentional';
+elseif contains(MCTPData.("MCTInstProbeIntentResp"){1},'right')
+    MCTPData.("MCTInstProbeIntentResp"){1} = 'Unintentional';
+end
     
 %% Add reaction time relative to stimulus onset to MCT
     
