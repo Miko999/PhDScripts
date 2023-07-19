@@ -2,7 +2,7 @@
 
 % Chelsie H.
 % Started: June 28, 2023
-% Last updated: July 13, 2023
+% Last updated: July 19, 2023
 % Last tested: (once script is complete)
 
     % Purpose: 
@@ -16,8 +16,7 @@
 % PARTICIPANTID_TASKP.csv for practice
 
     % Current Output:
-% TBD - likely a single csv with desired scores and descriptives for all
-% participants RPS_Task_Scores.csv
+% all scores added to the RPS_Task_Scores.csv
 
     % Example data files:
 % RPS003_demo...csv and Test_...csv
@@ -27,26 +26,7 @@
 %% Notes
 
     % To do's:
-% Make a basic output csv with columns defined
-% import this with proper data types for each column
-
-% Create basic skeleton for scripting with notes on how to approach each
-% part
-% Score each task excluding dummies
-% Derive useful descriptive statistics for each task excluding dummies (e.g., mean, sd, min, max
-% for reaction time to see if anyone had any odd trials).
-
-% Add a check for non-responders to MCT
-% Count the number of probes for MCT
-% Count response types for MCT
-
-% Do a re-check of accuracy in case psychopy accuracy is not correct
-
 % add this all to the data cleaning script 
-% add task info to the output file too
-
-% save cleaned data after scoring so that the new 'accuracy' columns are
-% included'
 
     % Future ideas:
 % combine this with researcher notes 
@@ -63,8 +43,7 @@
 % eventually all scores will need to be combined and z-scored.
 % CHECK WHETHER Z-TRANSFORMING DATA BEFORE CALCULTING d' MAKES A
 % DIFFERENCE.
-
-% may need to check criteria for removing MCT thought probes if they come
+% may need to consider criteria for removing MCT thought probes if they come
 % right after another one.
 
 %% Versions and Packages
@@ -111,7 +90,7 @@ clear opts
 %% Load in scoring storage file
 
 %%  JUST USING FIRST DEMO DATA FOR TESTING THE SCRIPT
-ID = "RPS003_Demo";
+ID = "RPS003_demo"; %"Test"
 
 % Just to check that opts are correct
 % SARTDataFile = fullfile(cleaneddatadir, strcat(ID,"_SART.csv"));
@@ -135,6 +114,16 @@ SwitchPData = readtable(fullfile(cleanedpdatadir, strcat(ID,"_SwitchP.csv")));
 SymSpanPData = readtable(fullfile(cleanedpdatadir, strcat(ID,"_SymSpanP.csv")));
 NBackPData = readtable(fullfile(cleanedpdatadir, strcat(ID,"_NBackP.csv")));
 MCTPData = readtable(fullfile(cleanedpdatadir, strcat(ID,"_MCTP.csv")));
+
+%% Record Participant and Task Info for storage
+
+% remove the following once this is all part of the larger loop.
+
+ID = {'RPS003_demo'};
+Date = {'2022-10-31_13h07.10.649'};
+TaskOrder = {'SASWscSYsrN'};
+
+Scores = [ID Date TaskOrder];
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %% Scoring SART Notes
@@ -308,7 +297,7 @@ elseif SARTPFARate == 1
 end
 
 % calculate d'
-SARTPDPrime = SARTPHitRate - SARTPFARate;
+SARTPdPrime = SARTPHitRate - SARTPFARate;
 
 % average reaction time all trials
 SARTPMeanRT = mean(SARTPData.SARTPRT,"omitnan");
@@ -330,7 +319,9 @@ SARTPFASDRT = std(SARTPRTFA,"omitnan");
 
 %% Store SART Practice Scores
 
-% clear SARTP*
+Scores = [Scores SARTPTrials SARTPTargets SARTPNonTargets SARTPHits SARTPFAs SARTPHitRate SARTPFARate SARTPdPrime SARTPMeanRT SARTPSDRT SARTPHitMeanRT SARTPHitSDRT SARTPFAMeanRT SARTPFASDRT];
+
+clear SARTP*
 
 %% Scoring Actual SART
 
@@ -411,7 +402,7 @@ elseif SARTFARate == 1
 end
 
 % calculate d'
-SARTDPrime = SARTHitRate - SARTFARate;
+SARTdPrime = SARTHitRate - SARTFARate;
 
 % average reaction time all trials
 SARTMeanRT = mean(SARTData.SARTRT,"omitnan");
@@ -433,7 +424,9 @@ SARTFASDRT = std(SARTRTFA,"omitnan");
 
 %% Store SART Scores
 
-% clear SART*
+Scores = [Scores SARTTrials SARTTargets SARTNonTargets SARTHits SARTFAs SARTHitRate SARTFARate SARTdPrime SARTMeanRT SARTSDRT SARTHitMeanRT SARTHitSDRT SARTFAMeanRT SARTFASDRT];
+
+clear SART*
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %% Scoring Switch Notes
@@ -633,7 +626,10 @@ SwitchPCostRT = SwitchPSwitchCorrMeanRT - SwitchPStayCorrMeanRT;
 
 %% Storing practice switch scoring
 
-% clear SwitchP*
+Scores = [Scores SwitchPShapeTrials SwitchPColourTrials SwitchPTrials SwitchPSwitchTrials SwitchPStayTrials SwitchPShapeCorrMeanRT SwitchPShapeCorrSDRT SwitchPColourCorrMeanRT SwitchPColourCorrSDRT SwitchPSwitchCorrMeanRT SwitchPSwitchCorrSDRT SwitchPStayCorrMeanRT SwitchPStayCorrSDRT SwitchPCostRT];
+
+clear SwitchP*
+
 %% Scoring actual switch task
 
 % check single task accuracy
@@ -761,7 +757,9 @@ SwitchCostRT = SwitchSwitchCorrMeanRT - SwitchStayCorrMeanRT;
 
 %% Storing actual switch scores
 
-% clear Switch*
+Scores = [Scores SwitchShapeTrials SwitchColourTrials SwitchTrials SwitchSwitchTrials SwitchStayTrials SwitchShapeCorrMeanRT SwitchShapeCorrSDRT SwitchColourCorrMeanRT SwitchColourCorrSDRT SwitchSwitchCorrMeanRT SwitchSwitchCorrSDRT SwitchStayCorrMeanRT SwitchStayCorrSDRT SwitchCostRT];
+
+clear Switch*
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
@@ -902,7 +900,9 @@ end
 
 %% Store Sym Span Practice
 
-% clear SymSpanP* SymPIdx
+Scores = [Scores SymSpanPSymOnlyMeanRT SymSpanPSymOnlySDRT SymSpanPRecOnlyMeanRT SymSpanPRecOnlySDRT SymSpanPSymMixedMeanRT SymSpanPSymMixedSDRT SymSpanPRecMixedMeanRT SymSpanPRecMixedSDRT SymSpanPMixedTrials SymSpanPMixedAccuracy];
+
+clear SymSpanP* SymPIdx
 
 %% Scoring Actual SymSpan
 
@@ -915,30 +915,30 @@ for SymIdx = 1:size(SymSpanData,1)
     SymSpanTrials = SymSpanTrials + 1;
     % all rows should have symmetry and recall stimuli
     % if they respond to symmetry correctly
-    if strcmp(SymSpanData.SymSpanMixSymCResp(SymPIdx),SymSpanData.SymSpanMixSymResp(SymPIdx))
-        SymSpanData.SymSpanMixSymAccuracyCheck(SymPIdx) = "correct";
+    if strcmp(SymSpanData.SymSpanMixSymCResp(SymIdx),SymSpanData.SymSpanMixSymResp(SymIdx))
+        SymSpanData.SymSpanMixSymAccuracyCheck(SymIdx) = "correct";
     % if they don't respond    
-    elseif strcmp('',SymSpanData.SymSpanMixSymResp(SymPIdx))
+    elseif strcmp('',SymSpanData.SymSpanMixSymResp(SymIdx))
             
             % ASSUMING IF THEY DON'T RESPOND IT WILL JUST BE ''
             % will need to test this with other data as the examples both
             % have full responding.
 
-        SymSpanData.SymSpanMixSymAccuracyCheck(SymPIdx) = "miss";
+        SymSpanData.SymSpanMixSymAccuracyCheck(SymIdx) = "miss";
 
     else
-        SymSpanData.SymSpanMixSymAccuracyCheck(SymPIdx) = "incorrect";
+        SymSpanData.SymSpanMixSymAccuracyCheck(SymIdx) = "incorrect";
     end
 
     % check that SymSpanMixRecRespMatches
-    if strcmp(SymSpanData.SymSpanMixRecStim(SymPIdx),SymSpanData.SymSpanMixRecResp(SymPIdx))
+    if strcmp(SymSpanData.SymSpanMixRecStim(SymIdx),SymSpanData.SymSpanMixRecResp(SymIdx))
         % record correct, incorrect
         % recall does not allow misses.
-        SymSpanData.SymSpanMixRecAccuracyCheck(SymPIdx) = "correct";
+        SymSpanData.SymSpanMixRecAccuracyCheck(SymIdx) = "correct";
         % add to counter
         SymSpanAccuracy = SymSpanAccuracy + 1;
     else
-        SymSpanData.SymSpanMixRecAccuracyCheck(SymPIdx) = "incorrect";
+        SymSpanData.SymSpanMixRecAccuracyCheck(SymIdx) = "incorrect";
     end
 
 end
@@ -965,7 +965,9 @@ end
 
 %% Store Actual SymSPan
 
-% clear Sym*
+Scores = [Scores SymSpanMixSymMeanRT SymSpanMixSymSDRT SymSpanMixRecMeanRT SymSpanMixRecSDRT SymSpanTrials SymSpanAccuracy];
+
+clear Sym*
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
@@ -1154,7 +1156,9 @@ NBack2PFASDRT = std(NBack2PFART,"omitnan");
 
 %% Store Practice NBack
 
-% clear NBack1P* NBack2P*
+Scores = [Scores NBack1PHits NBack1PFAs NBack1PTargets NBack1PNonTargets NBack1PHitRate NBack1PFARate NBack1PDPrime NBack1PHitMeanRT NBack1PHitSDRT NBack1PFAMeanRT NBack1PFASDRT NBack2PHits NBack2PFAs NBack2PTargets NBack2PNonTargets NBack2PHitRate NBack2PFARate NBack2PDPrime NBack2PHitMeanRT NBack2PHitSDRT NBack2PFAMeanRT NBack2PFASDRT];
+
+clear NBack1P* NBack2P*
 
 %% Score Actual NBack
 
@@ -1310,9 +1314,9 @@ NBack2FASDRT = std(NBack2FART,"omitnan");
 
 %% Store Actual NBack
 
-% clear NBack*
+Scores = [Scores NBack1Hits NBack1FAs NBack1Targets NBack1NonTargets NBack1HitRate NBack1FARate NBack1DPrime NBack1HitMeanRT NBack1HitSDRT NBack1FAMeanRT NBack1FASDRT NBack2Hits NBack2FAs NBack2Targets NBack2NonTargets NBack2HitRate NBack2FARate NBack2DPrime NBack2HitMeanRT NBack2HitSDRT NBack2FAMeanRT NBack2FASDRT];
 
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+clear NBack*
 %% Scoring Working Memory Notes
 
 % z-score transform and average symmetry span and n-back task scores
@@ -1323,6 +1327,8 @@ NBack2FASDRT = std(NBack2FART,"omitnan");
 
 % record thought type from instructions responses
 % record if they made an error during the practice
+% record thought probe response during practice, list them if there are
+% multiple?
 
 % check frequencies of
 % correct 20th beats
@@ -1337,56 +1343,244 @@ NBack2FASDRT = std(NBack2FART,"omitnan");
 % proportion of probes where participant was MW and aware/unaware
 % proportion of probes where participant was MW and had
 % intentional/unintentional thoughts
+% proportion of combined thought types?
 
 % so need number of probes
 % and number of responses of each type
 
-% also total probes of each type (miscount, lost count, time out)
-
-% and trials where participant did not respond
+% number of trials where the participant did not respond to the beat.
 
 %% Score Practice MCT
 
-% can store probe response information from introduction
+% record thought type from instructions responses
+% can just concatinate?
+MCTPInstProbe = strcat(MCTPData.MCTInstProbeOnOffResp(1),MCTPData.MCTInstProbeAwareResp(1),MCTPData.MCTInstProbeIntentResp(1));
 
-% check accuracy (and if they made an error during the practice
+% record if they made an error during the practice
+% this could be if the probe is the last row, or could be if they pressed
+% left at the wrong time, if they pressed up, or if they did not press left
+% at all...
+% or if the probe type is 0.
+% or just use the probe type text made in data cleaning e.g., contains('NoErrorP',MCTPData.MCTPProbeTypeText)
 
-% proportion of probes where participant was MW
-% proportion of probes where participant was MW and aware/unaware
-% proportion of probes where participant was MW and had
-% intentional/unintentional thoughts
+% record thought probe response during practice, list them if there are
+% multiple?
 
-% so need number of probes
-% and number of responses of each type
+% can't get time between probes but can get number of trials between
+% probes? (mean, sd, min, max).
+% just subtract row number of the previous probe from current probe and
+% store row number of current probe to use for subtraction next probe.
 
-% also total probes of each type (miscount, lost count, time out)
+% make an array for storing probe responses
+MCTPProbeResps = [];
+MCTPErrorType = []; % for a general list of errors during the practice, for the actual task will
+%  get a counter for each type of error
+MCTPErrorResp = []; % for a list of responses to the error, actual task use a counter
 
-% and trials where participant did not respond
+% make counters for errors/probes (use counter for probe types for actual data)
+MCTPProbes = 0;
+% MCTPTrials = 0; number of practice trials is always 25.
+MCTPCorrect = 0;
+MCTPNoneResp = 0;
+
+% store row number for probe differences
+% MCTPProbeTrialDiff = 0;
+% store probe differences in another array
+% MCTPProbeTrialDiffs = [];
+
+    
+for MCTPIdx = 1:(size(MCTPData,1))
+    
+    % if the probe type is 0, they did not make any error
+    if MCTPData.MCTPProbeType(MCTPIdx) == 0
+        % record that they did not make an error during the practice
+        MCTPErrorType = {'NONE'};
+        % record practice probe response
+        MCTPProbeResp = strcat(MCTPData.MCTPProbeOnOffResp(MCTPIdx), MCTPData.MCTPProbeAwareResp(MCTPIdx), MCTPData.MCTPProbeIntentResp(MCTPIdx));
+
+    % if probe type is any other probe type
+    elseif MCTPData.MCTPProbeType(MCTPIdx) == 1 || MCTPData.MCTPProbeType(MCTPIdx) == 2 || MCTPData.MCTPProbeType(MCTPIdx) == 3
+        % record the type of error they made, if multiple, add the errors
+        % to a list.
+        if isempty(MCTPErrorType)
+            MCTPErrorType = MCTPData.MCTPProbeTypeText(MCTPIdx);
+        else
+            MCTPErrorType = strcat(MCTPErrorType,',',MCTPData.MCTPProbeTypeText(MCTPIdx));
+        end
+        % add to the error counter
+        MCTPProbes = MCTPProbes + 1;
+        % Record practice probe response
+        MCTPProbeResp = strcat(MCTPData.MCTPProbeOnOffResp(MCTPIdx), MCTPData.MCTPProbeAwareResp(MCTPIdx), MCTPData.MCTPProbeIntentResp(MCTPIdx));
+        % store it in the array, added to the end if there was a previous
+        % probe
+        if isempty(MCTPProbeResps)
+            MCTPProbeResps = [MCTPProbeResp];
+        else
+            MCTPProbeResps = strcat(MCTPProbeResps,',',MCTPProbeResp);
+        end
+
+        % record responses to the thought probe intro, just in case
+        if isempty(MCTPErrorResp)
+            MCTPErrorResp = MCTPData.MCTPProbeIntroResp(MCTPIdx);
+        else
+            MCTPErrorResp = strcat(MCTPErrorResp,',',MCTPData.MCTPProbeIntroResp(MCTPIdx));
+        end
+
+        % Add the trial number difference of this probe and the most recent
+        % probe
+        % MCTPProbeTrialDiffs = [MCTPProbeTrialDiffs; (MCTPIdx - MCTPProbeTrialDiff)];
+        % store the trial number of the current probe to calculate the
+        % trial number difference between the next probe and the current
+        % probe
+        % MCTPProbeTrialDiff = MCTPIdx;
+        % the above should not be important for the practice MCT
+
+    % otherwise probe type will be NaN for the trials.
+    elseif isnan(MCTPData.MCTPProbeType(MCTPIdx))
+        % if the trial number is 20 and the response is left
+        if MCTPData.MCTPToneNum(MCTPIdx) == 20 && strcmp('left',MCTPData.MCTPResp(MCTPIdx))
+            % add to the 'correct' counter
+            MCTPCorrect = MCTPCorrect + 1;
+        end
+
+    end
+    % regardless of probe type, if the response is empty, it's a none
+    % response
+    % in the practice, this is except when trial number is NaN
+    if ~isnan(MCTPData.MCTPToneNum(MCTPIdx)) && isempty(MCTPData.MCTPResp(MCTPIdx))
+        % add to the non-response counter
+        MCTPNoneResp = MCTPNoneResp + 1;
+    end
+end
+
+% if they made no errors, there will be no error response so no information
+% will be added to the scores
+if isempty(MCTPErrorResp)
+    MCTPErrorResp = {'NoErrors'};
+end
+
 
 %% Store Practice MCT
 
+Scores = [Scores MCTPInstProbe MCTPProbeResp MCTPErrorType MCTPErrorResp MCTPProbes MCTPCorrect MCTPNoneResp];
+
+clear MCTP*
+
 %% Score Actual MCT
 
-% can store probe response information from introduction
-% did not include scoring code to re-code practice probe
+% instead of counters for some of the information we want, it's easier to
+% just use find()
 
-% check accuracy (and if they made an error during the practice
+MCTMW = size(find(strcmp('MW',MCTData.MCTProbeOnOffResp)),1);
+% vs MCTOnTask = 0;
+MCTAware = size(find(strcmp('Aware',MCTData.MCTProbeAwareResp)),1);
+% vs MCTUnaware = 0;
+MCTIntentional = size(find(strcmp('Intentional',MCTData.MCTProbeIntentResp)),1);
+% vs MCTUnintentional = 0;
 
-% proportion of probes where participant was MW
-% proportion of probes where participant was MW and aware/unaware
-% proportion of probes where participant was MW and had
-% intentional/unintentional thoughts
+MCTProbes = size(find(~isnan(MCTData.MCTProbeType)),1);
 
-% so need number of probes
-% and number of responses of each type
+% number of error types
+MCTMiscount = size(find(strcmp('Miscount',MCTData.MCTProbeTypeText)),1);
+MCTTimeout = size(find(strcmp('Timeout',MCTData.MCTProbeTypeText)),1);
+MCTLostCount = size(find(strcmp('LostCount',MCTData.MCTProbeTypeText)),1);
+% number of probe intro responses
+MCTThoughtCorrect = size(find(strcmp('ThoughtCorrect',MCTData.MCTProbeIntroResp)),1);
+MCTContinued = size(find(strcmp('Continue',MCTData.MCTProbeIntroResp)),1);
+MCTContinuedWrongKey = size(find(strcmp('ContinuedWrongKey',MCTData.MCTProbeIntroResp)),1);
+MCTAccident = size(find(strcmp('Accident',MCTData.MCTProbeIntroResp)),1);
 
-% also total probes of each type (miscount, lost count, time out)
+% for the combined types of thought probe responses and other things, we
+% will need to loop
 
-% and trials where participant did not respond
+% make an array for storing probe responses
+MCTProbeResps = [];
+MCTProbeRespsArray = [];
+% may not need this but just in case
+
+MCTNonResp = 0;
+MCTCorrect = 0;
+% MCTTrials = 0; % trials should always be 825 unless a participant
+% withdraws early.
+
+% store row number for probe differences
+MCTProbeTrialDiff = 0;
+% store probe differences in another array
+MCTProbeTrialDiffs = [];
+
+% for each row
+for MCTIdx = 1:size(MCTData,1)
+    % if there is a probe
+    if ~isnan(MCTData.MCTProbeType(MCTIdx))
+        % record probe response
+        MCTProbeResp = strcat(MCTData.MCTProbeOnOffResp(MCTIdx), MCTData.MCTProbeAwareResp(MCTIdx), MCTData.MCTProbeIntentResp(MCTIdx));
+        if isempty(MCTProbeResps)
+            MCTProbeResps = [MCTProbeResp];
+        else
+            MCTProbeResps = strcat(MCTProbeResps,',',MCTProbeResp);
+            MCTProbeRespsArray = [MCTProbeRespsArray,MCTProbeResp];
+        end
+        % could loop through each response type and put each type into a
+        % counter
+        % or just count them up at the end by going into MCTProbeResp
+        % also record trial differences between probes
+
+        % Add the trial number difference of this probe and the most recent
+        % probe
+        MCTProbeTrialDiffs = [MCTProbeTrialDiffs; (MCTIdx - MCTProbeTrialDiff)];
+        % store the trial number of the current probe to calculate the
+        % trial number difference between the next probe and the current
+        % probe
+        MCTProbeTrialDiff = MCTIdx;
+ 
+    % else if there is no probe
+    elseif isnan(MCTData.MCTProbeType(MCTIdx))
+        % if response is 'left' and MCTTrial is 20
+        if MCTData.MCTToneNum(MCTIdx) == 20 && strcmp('left',MCTData.MCTResp(MCTIdx))
+            %add to the 'correct' counter'
+            MCTCorrect = MCTCorrect + 1;
+        end
+
+        % if they did not respond
+        if strcmp('',MCTData.MCTResp(MCTIdx))
+            MCTNonResp = MCTNonResp + 1;
+        end
+    end
+end
+
+MCTMWAwareInt = size(find(strcmp('MWAwareIntentional',MCTProbeRespsArray)),2);
+MCTMWAwareUnint = size(find(strcmp('MWAwareUnintentional',MCTProbeRespsArray)),2);
+MCTMWUnawareInt = size(find(strcmp('MWUnawareIntentional',MCTProbeRespsArray)),2);
+MCTMWUnawareUnint = size(find(strcmp('MWUnawareUnintentional',MCTProbeRespsArray)),2);
+
+MCTMWAware = MCTMWAwareInt + MCTMWAwareUnint;
+MCTMWUnaware = MCTMWUnawareInt + MCTMWUnawareUnint;
+MCTMWIntentional = MCTMWAwareInt + MCTMWUnawareInt;
+MCTMWUnintentional = MCTMWAwareUnint + MCTMWUnawareUnint;
+
+MCTProbeTrialDiffsMin = min(MCTProbeTrialDiffs);
+MCTProbeTrialDiffsMax = max(MCTProbeTrialDiffs);
+MCTProbeTrialDiffsMean = mean(MCTProbeTrialDiffs);
+MCTProbeTrialDiffsSD = std(MCTProbeTrialDiffs);
+
+if isempty(MCTProbeResps)
+    MCTProbeResps = {'NoProbes'};
+end
 
 %% Store Actual MCT
 
-%% Add Session Info and Stored Scores to Output Spreadsheet
-% will be like task info, loading in a file and adding all new information
-% to it.
+Scores = [Scores MCTCorrect MCTNonResp MCTProbeResps MCTProbes MCTMiscount MCTTimeout MCTLostCount MCTThoughtCorrect MCTAccident MCTContinuedWrongKey MCTContinued MCTMW MCTAware MCTIntentional MCTMWAware MCTMWUnaware MCTMWIntentional MCTMWUnintentional MCTMWAwareInt MCTMWAwareUnint MCTMWUnawareInt MCTMWUnawareUnint MCTProbeTrialDiffsMin MCTProbeTrialDiffsMax MCTProbeTrialDiffsMean MCTProbeTrialDiffsSD];
 
+clear MCT*
+
+%% Load in Scores Data
+opts = detectImportOptions([maindir 'RPS_Task_Scores.csv']);
+opts.VariableNamingRule = 'preserve'; % need to set to preserve or it changes variable names ot match matlab syntax
+TaskScores = readtable([maindir 'RPS_Task_Scores.csv'],opts);
+    
+clear opts
+
+%% Combine Scores Data and Save as csv
+
+TaskScores = [TaskScores; Scores];
+writetable(TaskScores, [maindir 'RPS_Task_Scores.csv']);
