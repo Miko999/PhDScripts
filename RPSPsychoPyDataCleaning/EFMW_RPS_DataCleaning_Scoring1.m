@@ -2,8 +2,8 @@
 
 % Chelsie H.
 % Started: July 19, 2023
-% Last updated: July 19, 2023
-% Last tested: July 19, 2023
+% Last updated: July 21, 2023
+% Last tested: July 21, 2023
 
     % Purpose: 
 % Record task and participant information to a Task Info spreadsheet
@@ -1417,7 +1417,7 @@ elseif contains(MCTPData.("MCTInstProbeOnOffResp"){1},'right')
 end
 
 if contains(MCTPData.("MCTInstProbeAwareResp"){1},'left')
-    MCTPData.("MCTInstProbeAwareResp"){1} = 'OnTask';
+    MCTPData.("MCTInstProbeAwareResp"){1} = 'Unaware';
 elseif contains(MCTPData.("MCTInstProbeAwareResp"){1},'right')
     MCTPData.("MCTInstProbeAwareResp"){1} = 'Aware';
 end
@@ -1438,38 +1438,43 @@ end
     MCTData.("MCTRTDiff") = MCTData.("MCTRT") - 0.75;
     
     
+    clear *AllData
     
 %% Save cleaned data for checking
+    
+    % this part of the script was used prior to creating scoring script.
+    % new versions of the cleaned data will be saved with the score checks
+    % instead
 
-    fprintf('Saving processed data\n')
+    %fprintf('Saving processed data\n')
     
     % could have made a loop for file names but hardcoding for now.
 
-    SARTFileID = strcat(ID,"_SART.csv");
-    SwitchFileID = strcat(ID,"_Switch.csv");
-    SymSpanFileID = strcat(ID,"_SymSpan.csv");
-    NBackFileID = strcat(ID,"_NBack.csv");
-    MCTFileID = strcat(ID,"_MCT.csv");
+    %SARTFileID = strcat(ID,"_SART.csv");
+    %SwitchFileID = strcat(ID,"_Switch.csv");
+    %SymSpanFileID = strcat(ID,"_SymSpan.csv");
+    %NBackFileID = strcat(ID,"_NBack.csv");
+    %MCTFileID = strcat(ID,"_MCT.csv");
     
-    SARTPFileID = strcat(ID,"_SARTP.csv");
-    SwitchPFileID = strcat(ID,"_SwitchP.csv");
-    SymSpanPFileID = strcat(ID,"_SymSpanP.csv");
-    NBackPFileID = strcat(ID,"_NBackP.csv");
-    MCTPFileID = strcat(ID,"_MCTP.csv");
+    %SARTPFileID = strcat(ID,"_SARTP.csv");
+    %SwitchPFileID = strcat(ID,"_SwitchP.csv");
+    %SymSpanPFileID = strcat(ID,"_SymSpanP.csv");
+    %NBackPFileID = strcat(ID,"_NBackP.csv");
+    %MCTPFileID = strcat(ID,"_MCTP.csv");
     
-    writetable(SARTData, strcat(cleaneddatadir,SARTFileID));
-    writetable(SwitchData,strcat(cleaneddatadir,SwitchFileID));
-    writetable(SymSpanData,strcat(cleaneddatadir,SymSpanFileID));
-    writetable(NBackData,strcat(cleaneddatadir,NBackFileID));
-    writetable(MCTData,strcat(cleaneddatadir,MCTFileID));
+    %writetable(SARTData, strcat(cleaneddatadir,SARTFileID));
+    %writetable(SwitchData,strcat(cleaneddatadir,SwitchFileID));
+    %writetable(SymSpanData,strcat(cleaneddatadir,SymSpanFileID));
+    %writetable(NBackData,strcat(cleaneddatadir,NBackFileID));
+    %writetable(MCTData,strcat(cleaneddatadir,MCTFileID));
     
-    writetable(SARTPData, strcat(cleanedpdatadir,SARTPFileID));
-    writetable(SwitchPData, strcat(cleanedpdatadir,SwitchPFileID));
-    writetable(SymSpanPData, strcat(cleanedpdatadir,SymSpanPFileID));
-    writetable(NBackPData, strcat(cleanedpdatadir,NBackPFileID));
-    writetable(MCTPData, strcat(cleanedpdatadir,MCTPFileID));
+    %writetable(SARTPData, strcat(cleanedpdatadir,SARTPFileID));
+    %writetable(SwitchPData, strcat(cleanedpdatadir,SwitchPFileID));
+    %writetable(SymSpanPData, strcat(cleanedpdatadir,SymSpanPFileID));
+    %writetable(NBackPData, strcat(cleanedpdatadir,NBackPFileID));
+    %writetable(MCTPData, strcat(cleanedpdatadir,MCTPFileID));
     
-    clear *FileID *AllData
+    %clear *FileID *AllData
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %% Scoring
@@ -1573,6 +1578,9 @@ end
 
 %% Store SART Practice Scores
     
+    SARTPFileID = strcat(ID,"_SARTP.csv");
+    writetable(SARTPData, strcat(cleanedpdatadir,SARTPFileID));
+    
     Scores = [Scores SARTPTrials SARTPTargets SARTPNonTargets SARTPHits SARTPFAs SARTPHitRate SARTPFARate SARTPdPrime SARTPMeanRT SARTPSDRT SARTPHitMeanRT SARTPHitSDRT SARTPFAMeanRT SARTPFASDRT];
     
     clear SARTP*
@@ -1669,6 +1677,9 @@ end
     SARTFASDRT = std(SARTRTFA,"omitnan");
 
 %% Store SART Scores
+
+    SARTFileID = strcat(ID,"_SART.csv");
+    writetable(SARTData, strcat(cleaneddatadir,SARTFileID));
 
     Scores = [Scores SARTTrials SARTTargets SARTNonTargets SARTHits SARTFAs SARTHitRate SARTFARate SARTdPrime SARTMeanRT SARTSDRT SARTHitMeanRT SARTHitSDRT SARTFAMeanRT SARTFASDRT];
     
@@ -1806,6 +1817,9 @@ end
 
 %% Storing practice switch scoring
 
+    SwitchPFileID = strcat(ID,"_SwitchP.csv");
+    writetable(SwitchPData, strcat(cleanedpdatadir,SwitchPFileID));
+
     Scores = [Scores SwitchPShapeTrials SwitchPColourTrials SwitchPTrials SwitchPSwitchTrials SwitchPStayTrials SwitchPShapeCorrMeanRT SwitchPShapeCorrSDRT SwitchPColourCorrMeanRT SwitchPColourCorrSDRT SwitchPSwitchCorrMeanRT SwitchPSwitchCorrSDRT SwitchPStayCorrMeanRT SwitchPStayCorrSDRT SwitchPCostRT];
     
     clear SwitchP*
@@ -1934,6 +1948,9 @@ end
     SwitchCostRT = SwitchSwitchCorrMeanRT - SwitchStayCorrMeanRT;
     
 %% Storing actual switch scores
+
+    SwitchFileID = strcat(ID,"_Switch.csv");
+    writetable(SwitchData,strcat(cleaneddatadir,SwitchFileID));
     
     Scores = [Scores SwitchShapeTrials SwitchColourTrials SwitchTrials SwitchSwitchTrials SwitchStayTrials SwitchShapeCorrMeanRT SwitchShapeCorrSDRT SwitchColourCorrMeanRT SwitchColourCorrSDRT SwitchSwitchCorrMeanRT SwitchSwitchCorrSDRT SwitchStayCorrMeanRT SwitchStayCorrSDRT SwitchCostRT];
     
@@ -2054,6 +2071,9 @@ end
 
 %% Store Sym Span Practice
 
+    SymSpanPFileID = strcat(ID,"_SymSpanP.csv");
+    writetable(SymSpanPData, strcat(cleanedpdatadir,SymSpanPFileID));
+
     Scores = [Scores SymSpanPSymOnlyMeanRT SymSpanPSymOnlySDRT SymSpanPRecOnlyMeanRT SymSpanPRecOnlySDRT SymSpanPSymMixedMeanRT SymSpanPSymMixedSDRT SymSpanPRecMixedMeanRT SymSpanPRecMixedSDRT SymSpanPMixedTrials SymSpanPMixedAccuracy];
     
     clear SymSpanP* SymPIdx
@@ -2114,6 +2134,9 @@ end
 
 
 %% Store Actual SymSPan
+
+    SymSpanFileID = strcat(ID,"_SymSpan.csv");
+    writetable(SymSpanData,strcat(cleaneddatadir,SymSpanFileID));
 
     Scores = [Scores SymSpanMixSymMeanRT SymSpanMixSymSDRT SymSpanMixRecMeanRT SymSpanMixRecSDRT SymSpanTrials SymSpanAccuracy];
     
@@ -2277,6 +2300,9 @@ end
     NBack2PFASDRT = std(NBack2PFART,"omitnan");
     
 %% Store Practice NBack
+
+    NBackPFileID = strcat(ID,"_NBackP.csv");
+    writetable(NBackPData, strcat(cleanedpdatadir,NBackPFileID));
     
     Scores = [Scores NBack1PHits NBack1PFAs NBack1PTargets NBack1PNonTargets NBack1PHitRate NBack1PFARate NBack1PDPrime NBack1PHitMeanRT NBack1PHitSDRT NBack1PFAMeanRT NBack1PFASDRT NBack2PHits NBack2PFAs NBack2PTargets NBack2PNonTargets NBack2PHitRate NBack2PFARate NBack2PDPrime NBack2PHitMeanRT NBack2PHitSDRT NBack2PFAMeanRT NBack2PFASDRT];
     
@@ -2436,6 +2462,9 @@ end
 
 %% Store Actual NBack
 
+    NBackFileID = strcat(ID,"_NBack.csv");
+    writetable(NBackData,strcat(cleaneddatadir,NBackFileID));
+
     Scores = [Scores NBack1Hits NBack1FAs NBack1Targets NBack1NonTargets NBack1HitRate NBack1FARate NBack1DPrime NBack1HitMeanRT NBack1HitSDRT NBack1FAMeanRT NBack1FASDRT NBack2Hits NBack2FAs NBack2Targets NBack2NonTargets NBack2HitRate NBack2FARate NBack2DPrime NBack2HitMeanRT NBack2HitSDRT NBack2FAMeanRT NBack2FASDRT];
     
     clear NBack*
@@ -2534,6 +2563,9 @@ end
 
 
 %% Store Practice MCT
+
+    MCTPFileID = strcat(ID,"_MCTP.csv");
+    writetable(MCTPData, strcat(cleanedpdatadir,MCTPFileID));
 
     Scores = [Scores MCTPInstProbe MCTPProbeResp MCTPErrorType MCTPErrorResp MCTPProbes MCTPCorrect MCTPNoneResp];
     
@@ -2638,8 +2670,9 @@ end
     end
 
 %% Store Actual MCT
-    
-    fprintf('Storing Scores \n')
+
+    MCTFileID = strcat(ID,"_MCT.csv");
+    writetable(MCTData,strcat(cleaneddatadir,MCTFileID));
 
     Scores = [Scores MCTCorrect MCTNonResp MCTProbeResps MCTProbes MCTMiscount MCTTimeout MCTLostCount MCTThoughtCorrect MCTAccident MCTContinuedWrongKey MCTContinued MCTMW MCTAware MCTIntentional MCTMWAware MCTMWUnaware MCTMWIntentional MCTMWUnintentional MCTMWAwareInt MCTMWAwareUnint MCTMWUnawareInt MCTMWUnawareUnint MCTProbeTrialDiffsMin MCTProbeTrialDiffsMax MCTProbeTrialDiffsMean MCTProbeTrialDiffsSD];
     
@@ -2649,8 +2682,10 @@ end
 
 %% Combine Scoring Table
 
-TaskScores = [TaskScores; Scores];
-clear Scores
+    fprintf('Storing Scores \n')
+
+    TaskScores = [TaskScores; Scores];
+    clear Scores
 
 end
 
