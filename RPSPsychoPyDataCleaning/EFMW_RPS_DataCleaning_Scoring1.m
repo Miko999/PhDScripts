@@ -2,7 +2,7 @@
 
 % Chelsie H.
 % Started: July 19, 2023
-% Last updated: July 21, 2023
+% Last updated: July 28, 2023
 % Last tested: July 21, 2023
 
     % Purpose: 
@@ -37,6 +37,12 @@
 % PARTICIPANT_EFMW_Tasks_RPS_ExampleMCTErrors.csv
 
 %% Notes
+
+% n-back practice scoring currently does not exclude the dummies, which are always
+% non-targets. Actual n-back excludes the dummies.
+% scores for example data were checked manually in excel and showed that
+% the scoring script is accurate July 24, 2023
+
     % To do's:
 % Edit text sent to command window to grab participant ID or file name
 % Combine spreadsheet with scores with spreadsheet of questionnaire scores
@@ -67,6 +73,8 @@
 % DIFFERENCE.
 % may need to consider criteria for removing MCT thought probes if they come
 % right after another one.
+
+% have it select only the .csv not the log sheets
 
 %% Versions and Packages
 
@@ -1110,7 +1118,11 @@ for filesidx = 1:size(filecell,2)
     
     MCTPData = MCTAllData(MCTPRows,:);
     
-    MCTPData(:,all(ismissing(MCTPData))) = [];
+    % MCTPData(:,all(ismissing(MCTPData))) = []; this caused loss of the
+    % tone_practicetrial_resp related columns which are needed later.
+    % actuallly want to get rid of some different columns.
+    
+    % get appropraite columns
     
     % actual task
     MCTToneRows = ~isnan(MCTAllData.("toneloop1.ran"));
@@ -1153,7 +1165,18 @@ for filesidx = 1:size(filecell,2)
             ["MCTPProbeIntroResp","MCTPProbeIntroRT","MCTPProbeOnOffResp","MCTPProbeOnOffRT", ...
             "MCTPProbeAwareResp","MCTPProbeAwareRT","MCTPProbeIntentResp","MCTPProbeIntentRT"]);
     end
-    
+
+    % Participants that didn't respond during the practice will have not
+    % practice trial response rt.
+    if isempty(find(strcmp("tone_practicetrial_resp.rt",MCTPData.Properties.VariableNames),1))
+        % if there are no columns with this name we have to create a blank
+        % one.
+        EmptyCol = cell(size(MCTPData,1),1);
+        MCTPData.("tone_practicetrial_resp.rt") = EmptyCol;
+
+        clear EmptyCol
+    end
+        
     MCTPData = renamevars(MCTPData, ["tone_number","tone_practicetrial_resp.keys", ...
         "tone_practicetrial_resp.rt","practiceloop.thisRepN","probetype","onoff_resp_instructions_2.keys", ...
         "onoff_resp_instructions_2.rt","aware_resp_instructions_2.keys","aware_resp_instructions_2.rt", ...
@@ -1174,12 +1197,15 @@ for filesidx = 1:size(filecell,2)
     
   
     MCTPLoopCols = ~cellfun('isempty',regexp(MCTPData.Properties.VariableNames,'loop'));
+    MCTPUnderCols = ~cellfun('isempty',regexp(MCTPData.Properties.VariableNames,'_'));
     MCTLoopCols = ~cellfun('isempty',regexp(MCTData.Properties.VariableNames,'loop'));
     
-    MCTPData = MCTPData(:,~MCTPLoopCols);
+    MCTPNotCols = MCTPLoopCols | MCTPUnderCols;
+
+    MCTPData = MCTPData(:,~MCTPNotCols);
     MCTData = MCTData(:,~MCTLoopCols);
     
-    clear *LoopCols
+    clear *LoopCols MCTPUnderCols MCTPNotCols
     
 % For few errors example, MCTPData should have 19 columns, MCTData should
 % have 13 columns, at this point
