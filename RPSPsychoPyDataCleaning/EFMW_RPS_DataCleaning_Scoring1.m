@@ -2,8 +2,8 @@
 
 % Chelsie H.
 % Started: July 19, 2023
-% Last updated: July 28, 2023
-% Last tested: July 21, 2023
+% Last updated: August 8, 2023
+% Last tested: August 8, 2023
 
     % Purpose: 
 % Record task and participant information to a Task Info spreadsheet
@@ -38,6 +38,10 @@
 
 %% Notes
 
+% IF THERE IS AN ERROR WITH "Unrecognized table variable name
+% 'probeloop1.ran'." THE PARTICIPANT DID NOT SEE ANY PROBES AND SHOULD BE
+% EXCLUDED
+
 % n-back practice scoring currently does not exclude the dummies, which are always
 % non-targets. Actual n-back excludes the dummies.
 % scores for example data were checked manually in excel and showed that
@@ -47,6 +51,8 @@
 % Edit text sent to command window to grab participant ID or file name
 % Combine spreadsheet with scores with spreadsheet of questionnaire scores
 % and demographics
+% add a try catch for participants without probes? or at least an exit to
+% the next participant.
 
     % Future ideas:
 % Could add something such that if the participant ID matches files in the
@@ -550,8 +556,13 @@ for filesidx = 1:size(filecell,2)
     SwitchData = SwitchData(:,~SwitchDummyCols);
 
     % remove empty rows from the dummy data
-    SwitchPDummyData = rmmissing(SwitchPDummyData);
-    SwitchDummyData = rmmissing(SwitchDummyData);
+    %SwitchPDummyData = rmmissing(SwitchPDummyData);
+    %SwitchDummyData = rmmissing(SwitchDummyData);
+    % this was removing rows with any missing data but if the participant
+    % does not respond the dummy row may have missing data
+    SwitchPDummyData = rmmissing(SwitchPDummyData,'MinNumMissing',6);
+    SwitchDummyData = rmmissing(SwitchDummyData,'MinNumMissing',6);
+
     
     clear SwitchDummyCols SwitchPDummyCols 
     
@@ -573,6 +584,17 @@ for filesidx = 1:size(filecell,2)
 % actual switch data should have 19 columns, at this point
     
 %% Rename Switch Columns
+
+% except some participants were missing some columns?
+
+    if isempty(find(strcmp('pcolour_resp.rt',SwitchPData.Properties.VariableNames),1))
+        SwitchPData.("pcolour_resp.rt") = cell(size(SwitchPData,1),1);
+    end
+
+    if isempty(find(strcmp('pshape_resp.rt',SwitchPData.Properties.VariableNames),1))
+        SwitchPData.("pshape_resp.rt") = cell(size(SwitchPData,1),1);
+    end
+
    
     SwitchPData = renamevars(SwitchPData, ["pshape_resp.keys","pshape_resp.corr", ...
         "pshape_resp.rt", "practiceshapeloop.thisN","images","correct", ...
@@ -623,7 +645,16 @@ for filesidx = 1:size(filecell,2)
     PDummyRow.("SwitchPCRespMixed") = SwitchPDummyData.("dummypracticeswitchcorrectresponse");
     PDummyRow.("SwitchPResp") = SwitchPDummyData.("mixpracticedummyresp.keys");
     PDummyRow.("SwitchPAcc") = SwitchPDummyData.("mixpracticedummyresp.corr");
-    PDummyRow.("SwitchPRT") = SwitchPDummyData.("mixpracticedummyresp.rt");
+    
+    % PDummyRow.("SwitchPRT") = SwitchPDummyData.("mixpracticedummyresp.rt");
+    % doesn't work if there is no resposne
+
+    if ~isempty(find(strcmp('mixedpracticedummyresp.rt',SwitchPDummyData.Properties.VariableNames),1))
+        PDummyRow.("SwitchPRT") = SwitchPDummyData.("mixpracticedummyresp.rt");
+    else
+        PDummyRow.("SwitchPRT") = NaN;
+    end
+
     PDummyRow.("SwitchPTrial") = 1;
     
     % Add the dummy row to the data
@@ -640,7 +671,15 @@ for filesidx = 1:size(filecell,2)
     DummyRow.("SwitchCRespMixed") = SwitchDummyData.("dummycorrectresponse");
     DummyRow.("SwitchResp") = SwitchDummyData.("mixeddummyresp.keys");
     DummyRow.("SwitchAcc") = SwitchDummyData.("mixeddummyresp.corr");
-    DummyRow.("SwitchRT") = SwitchDummyData.("mixeddummyresp.rt");
+
+    % DummyRow.("SwitchRT") = SwitchDummyData.("mixeddummyresp.rt");
+    % Doesn't work if there is no response to dummy
+    if ~isempty(find(strcmp('mixeddummyresp.rt',SwitchDummyData.Properties.VariableNames),1))
+        DummyRow.("SwitchRT") = SwitchDummyData.("mixeddummyresp.rt");
+    else
+        DummyRow.("SwitchRT") = NaN;
+    end
+
     DummyRow.("SwitchTrial") = 1;
     
     % add dummy row to the data
@@ -1010,6 +1049,14 @@ for filesidx = 1:size(filecell,2)
     
 %% Rename NBack Columns
     
+    if isempty(find(strcmp('presp_2back.keys',NBackPData.Properties.VariableNames),1))
+        NBackPData.("presp_2back.keys") = cell(size(NBackPData,1),1);
+    end
+
+    if isempty(find(strcmp('presp_2back.rt',NBackPData.Properties.VariableNames),1))
+        NBackPData.("presp_2back.rt") = cell(size(NBackPData,1),1);
+    end
+
     NBackPData = renamevars(NBackPData, ["presp_1back.keys","presp_1back.corr","practice1backloop.thisTrialN", ...
         "letter","presp_1back.rt","presp_2back.keys","presp_2back.corr","practice2backloop.thisTrialN","presp_2back.rt"], ...
         ["NBack1PResp","NBack1PAcc","NBack1PTrial","NBackPStim","NBack1PRT","NBack2PResp","NBack2PAcc","NBack2PTrial","NBack2PRT"]);
@@ -2219,7 +2266,7 @@ end
                         % add to the false alarm counter
                         NBack1PFAs = NBack1PFAs + 1;
                         % add to the false alarm RT storage
-                        NBack1PFART = [NBack1PFART; NBackPData.NBackP1RT(NBackPIdx)];
+                        NBack1PFART = [NBack1PFART; NBackPData.NBack1PRT(NBackPIdx)];
                         % mark as incorrect
                         NBackPData.NBackPAccuracyCheck(NBackPIdx) = "incorrect";
                     end
@@ -2533,7 +2580,7 @@ end
             if isempty(MCTPErrorType)
                 MCTPErrorType = {MCTPData.MCTPProbeTypeText(MCTPIdx)};
             else
-                MCTPErrorType = strcat(MCTPErrorType,',',MCTPData.MCTPProbeTypeText(MCTPIdx));
+                MCTPErrorType = {strcat(string(MCTPErrorType),',',MCTPData.MCTPProbeTypeText(MCTPIdx))};
             end
             % add to the error counter
             MCTPProbes = MCTPProbes + 1;
