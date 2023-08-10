@@ -2,8 +2,8 @@
 
 % Chelsie H.
 % Started: July 19, 2023
-% Last updated: August 8, 2023
-% Last tested: August 8, 2023
+% Last updated: August 9, 2023
+% Last tested: August 9, 2023
 
     % Purpose: 
 % Record task and participant information to a Task Info spreadsheet
@@ -900,6 +900,7 @@ for filesidx = 1:size(filecell,2)
             % data 
             SymSpanPData.("SymSpanPRecResp")(SymPRespRow-PRowsUp) = SymSpanPData.("SymSpanPRecResp")(SymPRespRow);
             SymSpanPData.("SymSpanPRecAcc")(SymPRespRow-PRowsUp) = SymSpanPData.("SymSpanPRecAcc")(SymPRespRow);
+            SymSpanPData.("SymSpanPRecRT")(SymPRespRow-PRowsUp) = SymSpanPData.("SymSpanPRecRT")(SymPRespRow);
             % also assign the number of responses required per series
             SymSpanPData.("SymSpanPMixRecRespTrialsPerSeries")(SymPRespRow-PRowsUp) = SymSpanPData.("SymSpanPMixRecRespTrialsPerSeries")(SymPRespRow);
         end
@@ -913,6 +914,7 @@ for filesidx = 1:size(filecell,2)
             SymSpanData.("SymSpanMixRecResp")(SymRespRow-RowsUp) = SymSpanData.("SymSpanMixRecResp")(SymRespRow);
             SymSpanData.("SymSpanMixRecAcc")(SymRespRow-RowsUp) = SymSpanData.("SymSpanMixRecAcc")(SymRespRow);
             SymSpanData.("SymSpanMixRecTrialsPerSeries")(SymRespRow-RowsUp) = SymSpanData.("SymSpanMixRecTrialsPerSeries")(SymRespRow);
+            SymSpanData.("SymSpanMixRecRT")(SymRespRow-RowsUp) = SymSpanData.("SymSpanMixRecRT")(SymRespRow);
         end
     end
     
@@ -921,6 +923,9 @@ for filesidx = 1:size(filecell,2)
 %% Remove extra rows for SymSpan
     
     % Find the rows with stimulus information
+    % recall rection time was not being stored in previous versions because
+    % 'Rec stim" and "rec trials per series" were in different rows from
+    % recal rt.
     PSymStimRows = ~cellfun('isempty',SymSpanPData.("SymSpanPSymStim"));
     PRecStimPRows = ~cellfun('isempty',SymSpanPData.("SymSpanPRecStim"));
     
@@ -2116,7 +2121,7 @@ end
     % SymSPanPSymRT and SymSpanPRecRT will be NaN
     % otherwise can grab mean and SD of rt for symmetry only, recall only, and
     % mixed task
-    if isnan(sum(str2double(SymSpanPSymOnlyRT)))
+    if isnan(sum(SymSpanPSymOnlyRT))
         SymSpanPSymOnlyMeanRT = sum(str2double(SymSpanPSymOnlyRT));
         SymSpanPSymOnlySDRT = sum(str2double(SymSpanPSymOnlyRT));
         
@@ -2190,18 +2195,18 @@ end
     
     end
     
-    if isnan(sum(str2double(SymSpanData.SymSpanMixSymRT)))
+    if isnan(sum(SymSpanData.SymSpanMixSymRT))
         SymSpanMixSymMeanRT = sum(str2double(SymSpanData.SymSpanMixSymRT));
         SymSpanMixSymSDRT = sum(str2double(SymSpanData.SymSpanMixSymRT));
         
         SymSpanMixRecMeanRT = sum(str2double(SymSpanData.SymSpanMixSymRT));
         SymSpanMixRecSDRT = sum(str2double(SymSpanData.SymSpanMixSymRT));
     else
-        SymSpanMixSymMeanRT = mean(SymSpanMixSymMixedRT,"omitnan");
-        SymSpanMixSymSDRT = std(SymSpanMixSymMixedRT,"omitnan");
+        SymSpanMixSymMeanRT = mean(SymSpanData.SymSpanMixSymRT,"omitnan");
+        SymSpanMixSymSDRT = std(SymSpanData.SymSpanMixSymRT,"omitnan");
         
-        SymSpanMixRecMeanRT = mean(SymSpanMixRecMixedRT,"omitnan");
-        SymSpanMixRecSDRT = std(SymSpanMixRecMixedRT,"omitnan");
+        SymSpanMixRecMeanRT = mean(SymSpanData.SymSpanMixRecRT,"omitnan");
+        SymSpanMixRecSDRT = std(SymSpanData.SymSpanMixRecRT,"omitnan");
     end
 
 
