@@ -2121,7 +2121,7 @@ end
     % SymSPanPSymRT and SymSpanPRecRT will be NaN
     % otherwise can grab mean and SD of rt for symmetry only, recall only, and
     % mixed task
-    if isnan(sum(SymSpanPSymOnlyRT))
+    if isnan(sum(SymSpanPSymOnlyRT,"omitnan"))
         SymSpanPSymOnlyMeanRT = sum(str2double(SymSpanPSymOnlyRT));
         SymSpanPSymOnlySDRT = sum(str2double(SymSpanPSymOnlyRT));
         
@@ -2195,7 +2195,7 @@ end
     
     end
     
-    if isnan(sum(SymSpanData.SymSpanMixSymRT))
+    if isnan(sum(SymSpanData.SymSpanMixSymRT,"omitnan"))
         SymSpanMixSymMeanRT = sum(str2double(SymSpanData.SymSpanMixSymRT));
         SymSpanMixSymSDRT = sum(str2double(SymSpanData.SymSpanMixSymRT));
         
