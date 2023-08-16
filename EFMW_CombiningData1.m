@@ -2,7 +2,7 @@
 % Chelsie H.
 % Started: July 28, 2023
 % Last updated: July 28, 2023
-% Last tested: July 28, 2023
+% Last tested: August 16, 2023
 
     % Purpose: 
 % Combined cleaned data from PsychoPy and Qualtrics for running analyses
@@ -94,9 +94,9 @@ clear DateOrder FileName opts
 
 %% Load in previously combined data
 
-opts = detectImportOptions([maindir 'RPSData.csv']);
+opts = detectImportOptions([maindir 'RPSCombinedData.csv']);
 opts.VariableNamingRule = 'preserve';
-FullDataFile = readtable([maindir 'RPSData.csv'],opts);
+FullDataFile = readtable([maindir 'RPSCombinedData.csv'],opts);
 
 clear opts
 
@@ -156,7 +156,7 @@ end
 % if the full data is not empty
 if ~isempty(FullData)
     FullDataFile = [FullDataFile;FullData];
-    writetable(FullData, strcat(maindir,'RPSData.csv'));
+    writetable(FullData, strcat(maindir,'RPSCombinedData.csv'));
 else
     fprintf('\nNo new combined psychopy and qualtrics data.\n')
 end

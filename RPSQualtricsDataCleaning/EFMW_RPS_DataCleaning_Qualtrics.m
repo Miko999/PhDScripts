@@ -2,8 +2,8 @@
 
 % Chelsie H.
 % Started: July 24, 2023
-% Last updated: July 28, 2023
-% Last tested: July 28, 2023
+% Last updated: August 16, 2023
+% Last tested: August 16, 2023
 
     % Purpose: 
 % Take raw data extracted from qualtrics (numeric and choice text), and use
@@ -148,7 +148,7 @@ for PIdx = 1:size(RawDataText)
     % add in other demographics
     % omitting diagnosis age and only grabbing if they are on medication
    
-    QData = [QData, RawDataText(1,[40:46,48,51:53,56,57])];
+    QData = [QData, RawDataText(PIdx,[40:46,48,51:53,56,57])];
 
     clear RaceEthnicity
 
@@ -178,12 +178,17 @@ for PIdx = 1:size(RawDataText)
 
 %% Score BDEFS
 
-    % skipping section total for now.
-    % Section 1 columns 78 to 98
-    % Section 2 columns 99 to 122
-    % Section 3 columns 123 to 141
-    % Section 4 columns 142 to 153
-    % Section 5 columns 154 to 166
+    % Section Totals
+    % Section 1 - Self-Management to Time, columns 78 to 98
+    QData.BDEFS_SelfManagementToTime = sum(RawDataNum{PIdx,[78:98]},2,"omitnan");
+    % Section 2 - Self-Organization/Problem Solving, columns 99 to 122
+    QData.BDEFS_SelfOrganizationProblemSolving = sum(RawDataNum{PIdx,[99:122]},2,"omitnan");
+    % Section 3 - Self-Restraint, columns 123 to 141
+    QData.BDEFS_SelfRestaint = sum(RawDataNum{PIdx,[123:141]},2,"omitnan");
+    % Section 4 - Self-Motivation, columns 142 to 153
+    QData.BDEFS_SelfMotivation = sum(RawDataNum{PIdx,[142:153]},2,"omitnan");
+    % Section 5 - Self-Regulation of Emotion, columns 154 to 166
+    QData.BDEFS_SelfRegulationOfEmotion = sum(RawDataNum{PIdx,[154:166]},2,"omitnan");
     
     % Totaly EF Summary Score (sum all sections
     QData.TotalBDEFS= sum(RawDataNum{PIdx,[78:166]},2,"omitnan");
