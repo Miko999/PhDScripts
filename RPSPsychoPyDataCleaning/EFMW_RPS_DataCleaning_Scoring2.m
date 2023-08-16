@@ -129,6 +129,14 @@ TaskScores = readtable([maindir 'RPS_Task_Scores.csv'],opts);
     
 clear opts
 
+%% Load in Practice Scores Data
+opts = detectImportOptions([maindir 'RPS_Practice_Scores.csv']);
+opts.VariableNamingRule = 'preserve'; % need to set to preserve or it changes variable names ot match matlab syntax
+PTaskScores = readtable([maindir 'RPS_Practice_Scores.csv'],opts);
+    
+clear opts
+
+
 %% Find all files available for cleaning
 
 fprintf('Collecting raw file names\n')
@@ -1840,7 +1848,7 @@ end
                 % add to the stay counter
                 SwitchPStayTrials = SwitchPStayTrials + 1;
                 % add rt to reaction time storage for stay trials.
-                SwitchPStayRT = [SwitchPStayRt; SwitchPData.SwitchPRT(SwitchPIdx)];
+                SwitchPStayRT = [SwitchPStayRT; SwitchPData.SwitchPRT(SwitchPIdx)];
                 % if they responded correctly
                 if strcmp(SwitchPData.SwitchPResp(SwitchPIdx),SwitchPData.SwitchPCRespMixed(SwitchPIdx))
                     % accuracy check value is correct
@@ -1862,7 +1870,7 @@ end
                 % add to the switch counter
                 SwitchPSwitchTrials = SwitchPSwitchTrials + 1;
                 % add to the switch reaction time storage
-                SwitchPSwitchRT = [SwitchPSwitchRT, SwitchPData.SwitchPRT(SwitchPIDX)];
+                SwitchPSwitchRT = [SwitchPSwitchRT, SwitchPData.SwitchPRT(SwitchPIdx)];
                 % if they responded correctly
                 if strcmp(SwitchPData.SwitchPResp(SwitchPIdx),SwitchPData.SwitchPCRespMixed(SwitchPIdx))
                     % accuracy check value is correct
@@ -1899,11 +1907,11 @@ end
     SwitchPStayCorrMeanRT = mean(SwitchPStayCorrRT,"omitnan");
     SwitchPStayCorrSDRT = std(SwitchPStayCorrRT,"omitnan");
 
-    SwitchPStayMeanRT = mean(SwitchPStayMeanRT,"omitnan");
-    SwitchPStaySDRT = std(SwitchPStayMeanRT,"omitnan");
+    SwitchPStayMeanRT = mean(SwitchPStayRT,"omitnan");
+    SwitchPStaySDRT = std(SwitchPStayRT,"omitnan");
     
-    SwitchPSwitchMeanRT = mean(SwitchPSwitchMeanRT,"omitnan");
-    SwitchPSwitchSDRT = std(SwitchPSwitchMeanRT,"omitnan");
+    SwitchPSwitchMeanRT = mean(SwitchPSwitchRT,"omitnan");
+    SwitchPSwitchSDRT = std(SwitchPSwitchRT,"omitnan");
     
     % switch cost is mean rt switch - mean rt stay (for correct trials only)
     SwitchPCostRT = SwitchPSwitchCorrMeanRT - SwitchPStayCorrMeanRT;
@@ -2048,7 +2056,7 @@ end
     SwitchStayCorrMeanRT = mean(SwitchStayCorrRT,"omitnan");
     SwitchStayCorrSDRT = std(SwitchStayCorrRT,"omitnan");
 
-    SwitchSwitchMeanRt = mean(SwitchSwitchRT,"omitnan");
+    SwitchSwitchMeanRT = mean(SwitchSwitchRT,"omitnan");
     SwitchSwitchSDRT = std(SwitchSwitchRT,"omitnan");
 
     SwitchStayMeanRT = mean(SwitchStayRT,"omitnan");
@@ -2105,7 +2113,7 @@ end
             % if there is no recall stimulus
             if strcmp('',SymSpanPData.SymSpanPRecStim(SymPIdx))
                 % add reaction time to the symmetry only storage
-                SymSpanPSymOnlyRT = [SymSpanPSymOnlyRT; SymSpanPData.SymSpanPSymRT(SymPIdx)];
+                SymSpanPSymOnlyRT = [SymSpanPSymOnlyRT; str2double(SymSpanPData.SymSpanPSymRT(SymPIdx))];
             % if there is a recall stimulus
             elseif ~strcmp('',SymSpanPData.SymSpanPRecStim(SymPIdx))
                 % add reaction time to symmetry mixed storage
@@ -2157,21 +2165,23 @@ end
     % SymSPanPSymRT and SymSpanPRecRT will be NaN
     % otherwise can grab mean and SD of rt for symmetry only, recall only, and
     % mixed task
-    if isnan(sum(SymSpanPSymOnlyRT,"omitnan"))
-        SymSpanPSymOnlyMeanRT = sum(str2double(SymSpanPSymOnlyRT));
-        SymSpanPSymOnlySDRT = sum(str2double(SymSpanPSymOnlyRT));
+    % if all values are NaN, the sum of isnan should be equal to the size
+    % of the array
+    if sum(isnan(SymSpanPSymOnlyRT))==size(SymSpanPSymOnlyRT,1)
+        SymSpanPSymOnlyMeanRT = sum(SymSpanPSymOnlyRT);
+        SymSpanPSymOnlySDRT = sum(SymSpanPSymOnlyRT);
         
-        SymSpanPRecOnlyMeanRT = sum(str2double(SymSpanPSymOnlyRT));
-        SymSpanPRecOnlySDRT = sum(str2double(SymSpanPSymOnlyRT));
+        SymSpanPRecOnlyMeanRT = sum(SymSpanPSymOnlyRT);
+        SymSpanPRecOnlySDRT = sum(SymSpanPSymOnlyRT);
         
-        SymSpanPSymMixedMeanRT = sum(str2double(SymSpanPSymOnlyRT));
-        SymSpanPSymMixedSDRT = sum(str2double(SymSpanPSymOnlyRT));
+        SymSpanPSymMixedMeanRT = sum(SymSpanPSymOnlyRT);
+        SymSpanPSymMixedSDRT = sum(SymSpanPSymOnlyRT);
         
-        SymSpanPRecMixedMeanRT = sum(str2double(SymSpanPSymOnlyRT));
-        SymSpanPRecMixedSDRT = sum(str2double(SymSpanPSymOnlyRT));
+        SymSpanPRecMixedMeanRT = sum(SymSpanPSymOnlyRT);
+        SymSpanPRecMixedSDRT = sum(SymSpanPSymOnlyRT);
 
-        SymSpanPRecMixedCorrMeanRT = sum(str2double(SymSpanPRecMixedCorrRT));
-        SymSpanPRecMixedCorrSDRT = sum(str2double(SymSpanPRecMixedCorrRT));
+        SymSpanPRecMixedCorrMeanRT = sum(SymSpanPSymOnlyRT);
+        SymSpanPRecMixedCorrSDRT = sum(SymSpanPSymOnlyRT);
     else
         SymSpanPSymOnlyMeanRT = mean(SymSpanPSymOnlyRT,"omitnan");
         SymSpanPSymOnlySDRT = std(SymSpanPSymOnlyRT,"omitnan");
@@ -2242,7 +2252,8 @@ end
     
     end
     
-    if isnan(sum(SymSpanData.SymSpanMixSymRT,"omitnan"))
+    if sum(isnan(str2double(SymSpanData.SymSpanMixSymRT))) == size(SymSpanData.SymSpanMixSymRT,1)
+        isnan(sum(str2double(SymSpanData.SymSpanMixSymRT)))
         SymSpanMixSymMeanRT = sum(str2double(SymSpanData.SymSpanMixSymRT));
         SymSpanMixSymSDRT = sum(str2double(SymSpanData.SymSpanMixSymRT));
         
@@ -2816,7 +2827,8 @@ end
     fprintf('Storing Scores \n')
 
     TaskScores = [TaskScores; Scores];
-    clear Scores
+    PTaskScores = [PTaskScores; PScores];
+    clear Scores PScores
 
 end
 
