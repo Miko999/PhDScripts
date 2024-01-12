@@ -2,8 +2,8 @@
 
 % Chelsie H.
 % Started: July 19, 2023
-% Last updated: August 16, 2023
-% Last tested: August 16, 2023
+% Last updated: January 10, 2024
+% Last tested: January 10, 2024
 
     % Purpose: 
 % Record task and participant information to a Task Info spreadsheet
@@ -175,7 +175,7 @@ for filesidx = 1:size(filecell,2)
     fprintf('\n******\nLoading in raw data file: %s\n******\n\n', filenamestring);
     
     % detect the options for importing the raw data
-    opts = detectImportOptions([rawdatadir filenamestring]);
+    opts = detectImportOptions([rawdatadir filenamestring],"Delimiter",",");
     % preserve variable naming to match matlab syntax so the variable names
     % are consistent with the column key
     opts.VariableNamingRule = 'preserve'; 
@@ -1070,6 +1070,14 @@ for filesidx = 1:size(filecell,2)
         NBackPData.("presp_2back.rt") = cell(size(NBackPData,1),1);
     end
 
+    if isempty(find(strcmp('presp_1back.keys',NBackPData.Properties.VariableNames),1))
+        NBackPData.("presp_1back.keys") = cell(size(NBackPData,1),1);
+    end
+
+    if isempty(find(strcmp('presp_1back.rt',NBackPData.Properties.VariableNames),1))
+        NBackPData.("presp_1back.rt") = cell(size(NBackPData,1),1);
+    end
+
     NBackPData = renamevars(NBackPData, ["presp_1back.keys","presp_1back.corr","practice1backloop.thisTrialN", ...
         "letter","presp_1back.rt","presp_2back.keys","presp_2back.corr","practice2backloop.thisTrialN","presp_2back.rt"], ...
         ["NBack1PResp","NBack1PAcc","NBack1PTrial","NBackPStim","NBack1PRT","NBack2PResp","NBack2PAcc","NBack2PTrial","NBack2PRT"]);
@@ -1135,6 +1143,7 @@ for filesidx = 1:size(filecell,2)
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 %% Metronome Counting Task
+
     fprintf('Processing MCT data\n')
 
     % similar process for separating data from other tasks
@@ -1155,6 +1164,9 @@ for filesidx = 1:size(filecell,2)
     MCTAllData.("practiceloop.thisN") = rawdata.("practiceloop.thisN");
     MCTAllData.("practiceloop.thisIndex") = rawdata.("practiceloop.thisIndex");
     MCTAllData.("practiceloop.ran") = rawdata.("practiceloop.ran");
+
+    % Participants with probes should have 48 columns in MCTAllData
+    % Participants without probes will have 35 columns in MCTAllData
     
 %% Separate practice from task for MCT and remove some extra columns and rows
     
@@ -1186,6 +1198,37 @@ for filesidx = 1:size(filecell,2)
     
     % actual task
     MCTToneRows = ~isnan(MCTAllData.("toneloop1.ran"));
+
+    % participants who saw no probes will not have the following columns: probe_resp.keys, probe_resp.rt, 
+    % onoff_resp.keys, onoff_resp.rt, aware_resp.keys, aware_resp.rt, intent_response.keys, intent_response.rt, 
+    % probeloop1.thisRepN, probeloop1.thisTrialN, probeloop1.thisN, probeloop1.thisIndex, probeloop1.ran
+    
+    % create a list of those names
+    MCTMissingCells = ["probe_resp.keys" "onoff_resp.keys" "aware_resp.keys" "intent_response.keys"];
+    % for each of those column names
+    for MCTMissingCellsIdx = 1:length(MCTMissingCells)
+    % if those columns don't exist
+        if isempty(find(strcmp(MCTMissingCells(MCTMissingCellsIdx),MCTAllData.Properties.VariableNames),1))
+        % create empty columns for each
+        EmptyCol = cell(size(MCTAllData,1),1);
+        MCTAllData.(MCTMissingCells(MCTMissingCellsIdx)) = EmptyCol;
+        clear EmptyCol
+        end
+    end
+
+    % This makes empty cells when some need to be doubles
+    MCTMissingDoubles = ["probe_resp.rt" "onoff_resp.rt" "aware_resp.rt" "intent_response.rt" "probeloop1.thisRepN" "probeloop1.thisTrialN" "probeloop1.thisN" "probeloop1.thisIndex" "probeloop1.ran"];
+    for MCTMissingDoublesIdx = 1:length(MCTMissingDoubles)
+        if isempty(find(strcmp(MCTMissingDoubles(MCTMissingDoublesIdx),MCTAllData.Properties.VariableNames),1))
+        % create empty columns for each
+        EmptyCol = cell(size(MCTAllData,1),1);
+        MCTAllData.(MCTMissingDoubles(MCTMissingDoublesIdx)) = str2double(EmptyCol);
+
+        clear EmptyCol
+        end
+    end
+
+
     MCTProbeRows = ~isnan(MCTAllData.("probeloop1.ran"));
     
     MCTRows = MCTToneRows | MCTProbeRows;
@@ -1206,6 +1249,8 @@ for filesidx = 1:size(filecell,2)
     
 % for few errors example, MCTPData should have 29 columns, MCTData should 
 % have 17 columns at this point
+% Participants without probes should hae 48 columns in all data, 17 columns
+% in MCTData
     
 %% Rename columns for MCT
     
@@ -1236,6 +1281,7 @@ for filesidx = 1:size(filecell,2)
 
         clear EmptyCol
     end
+
         
     MCTPData = renamevars(MCTPData, ["tone_number","tone_practicetrial_resp.keys", ...
         "tone_practicetrial_resp.rt","practiceloop.thisRepN","probetype","onoff_resp_instructions_2.keys", ...
@@ -1476,19 +1522,19 @@ for filesidx = 1:size(filecell,2)
         end
     
         % regardless of the probe type the other responses are consistent
-        if contains(MCTData.("MCTProbeOnOffResp"){ProbeRowIdx},'left')
+        if contains(string(MCTData.("MCTProbeOnOffResp"){ProbeRowIdx}),'left')
             MCTData.("MCTProbeOnOffResp"){ProbeRowIdx} = 'OnTask';
-        elseif contains(MCTData.("MCTProbeOnOffResp"){ProbeRowIdx},'right')
+        elseif contains(string(MCTData.("MCTProbeOnOffResp"){ProbeRowIdx}),'right')
             MCTData.("MCTProbeOnOffResp"){ProbeRowIdx} = 'MW';
         end
-        if contains(MCTData.("MCTProbeAwareResp"){ProbeRowIdx},'left')
+        if contains(string(MCTData.("MCTProbeAwareResp"){ProbeRowIdx}),'left')
             MCTData.("MCTProbeAwareResp"){ProbeRowIdx} = 'Unaware';
-        elseif contains(MCTData.("MCTProbeAwareResp"){ProbeRowIdx},'right')
+        elseif contains(string(MCTData.("MCTProbeAwareResp"){ProbeRowIdx}),'right')
             MCTData.("MCTProbeAwareResp"){ProbeRowIdx} = 'Aware';
         end
-        if contains(MCTData.("MCTProbeIntentResp"){ProbeRowIdx},'left')
+        if contains(string(MCTData.("MCTProbeIntentResp"){ProbeRowIdx}),'left')
             MCTData.("MCTProbeIntentResp"){ProbeRowIdx} = 'Intentional';
-        elseif contains(MCTData.("MCTProbeIntentResp"){ProbeRowIdx},'right')
+        elseif contains(string(MCTData.("MCTProbeIntentResp"){ProbeRowIdx}),'right')
             MCTData.("MCTProbeIntentResp"){ProbeRowIdx} = 'Unintentional';
         end
     end
@@ -1670,6 +1716,8 @@ end
     
     PScores = [PScores SARTPTrials SARTPTargets SARTPNonTargets SARTPHits SARTPFAs SARTPHitRate SARTPFARate SARTPdPrime SARTPMeanRT SARTPSDRT SARTPHitMeanRT SARTPHitSDRT SARTPFAMeanRT SARTPFASDRT];
 
+    % PScores is 1x17 at this point
+
     clear SARTP*
 
 %% Scoring Actual SART
@@ -1770,6 +1818,8 @@ end
 
     Scores = [Scores SARTTrials SARTTargets SARTNonTargets SARTHits SARTFAs SARTHitRate SARTFARate SARTdPrime SARTMeanRT SARTSDRT SARTHitMeanRT SARTHitSDRT SARTFAMeanRT SARTFASDRT];
     
+    % Scores is 1 x 17 cell at this point
+
     clear SART*
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -1924,6 +1974,8 @@ end
 
     PScores = [PScores SwitchPShapeTrials SwitchPColourTrials SwitchPTrials SwitchPSwitchTrials SwitchPStayTrials SwitchPSwitchCorrTrials SwitchPShapeCorrMeanRT SwitchPShapeCorrSDRT SwitchPColourCorrMeanRT SwitchPColourCorrSDRT SwitchPSwitchCorrMeanRT SwitchPSwitchCorrSDRT SwitchPStayCorrMeanRT SwitchPStayCorrSDRT SwitchPStayMeanRT SwitchPStaySDRT SwitchPSwitchMeanRT SwitchPSwitchSDRT SwitchPCostRT];
     
+    % PScores is 1x36
+
     clear SwitchP*
 
 %% Scoring actual switch task
@@ -2072,6 +2124,8 @@ end
     
     Scores = [Scores SwitchShapeTrials SwitchColourTrials SwitchTrials SwitchSwitchTrials SwitchStayTrials SwitchSwitchCorrectTrials SwitchShapeCorrMeanRT SwitchShapeCorrSDRT SwitchColourCorrMeanRT SwitchColourCorrSDRT SwitchSwitchCorrMeanRT SwitchSwitchCorrSDRT SwitchStayCorrMeanRT SwitchStayCorrSDRT SwitchSwitchMeanRT SwitchSwitchSDRT SwitchStayMeanRT SwitchStaySDRT SwitchCostRT];
     
+    % Scores is 1 x 36
+
     clear Switch*
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -2206,6 +2260,8 @@ end
 
     PScores = [PScores SymSpanPSymOnlyMeanRT SymSpanPSymOnlySDRT SymSpanPRecOnlyMeanRT SymSpanPRecOnlySDRT SymSpanPSymMixedMeanRT SymSpanPSymMixedSDRT SymSpanPRecMixedMeanRT SymSpanPRecMixedSDRT SymSpanPRecMixedCorrMeanRT SymSpanPRecMixedCorrSDRT SymSpanPMixedTrials SymSpanPMixedAccuracy];
     
+    % PScores is 1x48
+
     clear SymSpanP* SymPIdx
 
 %% Scoring Actual SymSpan
@@ -2253,7 +2309,7 @@ end
     end
     
     if sum(isnan(str2double(SymSpanData.SymSpanMixSymRT))) == size(SymSpanData.SymSpanMixSymRT,1)
-        isnan(sum(str2double(SymSpanData.SymSpanMixSymRT)))
+        isnan(sum(str2double(SymSpanData.SymSpanMixSymRT)));
         SymSpanMixSymMeanRT = sum(str2double(SymSpanData.SymSpanMixSymRT));
         SymSpanMixSymSDRT = sum(str2double(SymSpanData.SymSpanMixSymRT));
         
@@ -2282,6 +2338,8 @@ end
 
     Scores = [Scores SymSpanMixSymMeanRT SymSpanMixSymSDRT SymSpanMixRecMeanRT SymSpanMixRecSDRT SymSpanMixRecCorrMeanRT SymSpanMixRecCorrSDRT SymSpanTrials SymSpanAccuracy];
     
+    % Scores is 1x44
+
     clear Sym*
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -2448,6 +2506,8 @@ end
     
     PScores = [PScores NBack1PHits NBack1PFAs NBack1PTargets NBack1PNonTargets NBack1PHitRate NBack1PFARate NBack1PDPrime NBack1PHitMeanRT NBack1PHitSDRT NBack1PFAMeanRT NBack1PFASDRT NBack2PHits NBack2PFAs NBack2PTargets NBack2PNonTargets NBack2PHitRate NBack2PFARate NBack2PDPrime NBack2PHitMeanRT NBack2PHitSDRT NBack2PFAMeanRT NBack2PFASDRT];
     
+    %  PScores is 1x70
+
     clear NBack1P* NBack2P*
 
 %% Score Actual NBack
@@ -2609,6 +2669,8 @@ end
 
     Scores = [Scores NBack1Hits NBack1FAs NBack1Targets NBack1NonTargets NBack1HitRate NBack1FARate NBack1DPrime NBack1HitMeanRT NBack1HitSDRT NBack1FAMeanRT NBack1FASDRT NBack2Hits NBack2FAs NBack2Targets NBack2NonTargets NBack2HitRate NBack2FARate NBack2DPrime NBack2HitMeanRT NBack2HitSDRT NBack2FAMeanRT NBack2FASDRT];
     
+    % Scores is 1x66
+        
     clear NBack*
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -2711,6 +2773,8 @@ end
 
     PScores = [PScores MCTPInstProbe MCTPProbeResp MCTPErrorType MCTPErrorResp MCTPProbes MCTPCorrect MCTPNoneResp];
     
+    % PScores is 1x77
+
     clear MCTP
 
 %% Score Actual MCT
@@ -2806,7 +2870,13 @@ end
     MCTProbeTrialDiffsMax = max(MCTProbeTrialDiffs);
     MCTProbeTrialDiffsMean = mean(MCTProbeTrialDiffs);
     MCTProbeTrialDiffsSD = std(MCTProbeTrialDiffs);
-    
+
+    if isempty(MCTProbeTrialDiffsMin)
+        MCTProbeTrialDiffsMin = NaN;
+    end
+    if isempty(MCTProbeTrialDiffsMax)
+        MCTProbeTrialDiffsMax = NaN;
+    end
     if isempty(MCTProbeResps)
         MCTProbeResps = {'NoProbes'};
     end
@@ -2818,6 +2888,8 @@ end
 
     Scores = [Scores MCTCorrect MCTNonResp MCTProbeResps MCTProbes MCTMiscount MCTTimeout MCTLostCount MCTThoughtCorrect MCTAccident MCTContinuedWrongKey MCTContinued MCTMW MCTAware MCTIntentional MCTMWAware MCTMWUnaware MCTMWIntentional MCTMWUnintentional MCTMWAwareInt MCTMWAwareUnint MCTMWUnawareInt MCTMWUnawareUnint MCTProbeTrialDiffsMin MCTProbeTrialDiffsMax MCTProbeTrialDiffsMean MCTProbeTrialDiffsSD];
     
+    % Scores is 1x92
+
     clear MCT*
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%

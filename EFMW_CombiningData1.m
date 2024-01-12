@@ -1,8 +1,8 @@
 %% Executive Functioning and Mind Wandering (RPS) Study - Combining Cleaned Data
 % Chelsie H.
 % Started: July 28, 2023
-% Last updated: July 28, 2023
-% Last tested: August 16, 2023
+% Last updated: January 11, 2024
+% Last tested: January 11, 2024
 
     % Purpose: 
 % Combined cleaned data from PsychoPy and Qualtrics for running analyses
@@ -16,6 +16,7 @@
     % Current Output:
 % .csv with all scores called RPSData.csv in main scripting folder. This
 % was made using examples to create the appropriate number of columns.
+% CHECK OUTPUT FOR DUPLICATES
 
 %% Notes
 
@@ -156,7 +157,7 @@ end
 % if the full data is not empty
 if ~isempty(FullData)
     FullDataFile = [FullDataFile;FullData];
-    writetable(FullData, strcat(maindir,'RPSCombinedData.csv'));
+    writetable(FullDataFile, strcat(maindir,'RPSCombinedData.csv'));
 else
     fprintf('\nNo new combined psychopy and qualtrics data.\n')
 end
