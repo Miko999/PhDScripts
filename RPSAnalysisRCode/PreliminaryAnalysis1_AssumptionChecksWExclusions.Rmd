@@ -1,0 +1,288 @@
+---
+title: "EFMW Study 1 PreLiminary Analysis"
+creation date: "August 10, 2023"
+last edited date: "January 12, 2024"
+author: "Chelsie H."
+output: html_notebook
+---
+
+Note: This R script assumes combined data has been processed through ScoreConversions.Rmd
+
+```{r startup}
+rm()
+
+library(correlation)
+library(ggplot2)
+library(sjPlot)
+library(lme4)
+library(lmerTest)
+library(rstatix)
+
+
+versions <- devtools::session_info() #save R and R package versions.
+versions
+```
+
+```{r load data}
+directoryset = readline("Are you using the PC (1) or Laptop (2)?")
+
+if (directoryset == "1"){
+  setwd("C:/Users/chish/OneDrive - University of Calgary/1_PhD_Project/Scripting/RPSPreliminaryAnalysis")
+} else {
+  setwd("C:/Users/chels/OneDrive - University of Calgary/1_PhD_Project/Scripting/RPSPreliminaryAnalysis")
+}
+
+AllData <- read.csv("RPSCombinedDataConv_Jan12_2024.csv")
+
+rm(directoryset)
+```
+
+Assumption Checks
+
+(outlier code taken from: https://stackoverflow.com/questions/33524669/labeling-outliers-of-boxplots-in-r)
+
+```{r assumption checks for ASRS}
+hist(AllData$ASRSTotal)
+shapiro.test(AllData$ASRSTotal)
+qqnorm(AllData$ASRSTotal)
+
+ggplot(AllData, aes(y = ASRSTotal)) +
+  geom_boxplot()
+```
+Histogram: slight positive skew
+Shapiro-Wilk: W = 0.97953, p-value = 0.0373
+QQ: mostly straight line
+Boxplot: outliers at top and bottom, but mostly equal.
+
+ASRS is normal enough.
+
+```{r ASRS identify outlier}
+AllData %>%
+  identify_outliers(ASRSTotal)
+```
+
+
+```{r assumption checks for BDEFS}
+hist(AllData$TotalBDEFS)
+shapiro.test(AllData$TotalBDEFS)
+qqnorm(AllData$TotalBDEFS)
+
+ggplot(AllData, aes(y = TotalBDEFS)) +
+  geom_boxplot()
+
+BDEFSOutlier = AllData[AllData$TotalBDEFS == max(AllData$TotalBDEFS),]
+```
+Histogram: 
+Shapiro-Wilk: 
+QQ:
+boxplot:
+
+BDEFS does not pass normality potentially due to one high outlier.
+
+```{r BDEFS identify outlier}
+AllData %>%
+  identify_outliers(TotalBDEFS)
+```
+
+
+```{r assumption checks for Mews}
+hist(AllData$TotalMews)
+shapiro.test(AllData$TotalMews)
+qqnorm(AllData$TotalMews)
+
+ggplot(AllData, aes(y = TotalMews)) +
+  geom_boxplot()
+```
+
+Histogram: 
+Shapiro-Wilk: 
+QQ:
+boxplot:
+
+Mews is skewed towards lower scores (positive skew)
+
+```{r assumption checks for SARTz}
+hist(AllData$SARTz)
+shapiro.test(AllData$SARTz)
+qqnorm(AllData$SARTz)
+
+ggplot(AllData, aes(y = SARTz)) +
+  geom_boxplot()
+```
+
+Histogram: 
+Shapiro-Wilk: 
+QQ:
+boxplot:
+
+SARTz is skewed towards higher scores (negative skew)
+Checking raw scores
+```{r assumption checks for SARTdPrime}
+hist(AllData$SARTdPrime)
+shapiro.test(AllData$SARTdPrime)
+qqnorm(AllData$SARTdPrime)
+
+ggplot(AllData, aes(y = SARTdPrime)) +
+  geom_boxplot()
+```
+
+Histogram: 
+Shapiro-Wilk: 
+QQ:
+boxplot:
+
+Skew was present in raw data.
+
+```{r assumption checks for Switchz}
+hist(AllData$Switchz)
+shapiro.test(AllData$Switchz)
+qqnorm(AllData$Switchz)
+
+ggplot(AllData, aes(y = Switchz)) +
+  geom_boxplot()
+```
+
+Histogram: 
+Shapiro-Wilk: 
+QQ:
+boxplot:
+
+Switchz has a few high outliers likely causing it to not pass normality assumption checks
+
+```{r Switchz identify outlier}
+AllData %>%
+  identify_outliers(Switchz)
+```
+
+```{r assumption checks for WMComp}
+hist(AllData$WMComp)
+shapiro.test(AllData$WMComp)
+qqnorm(AllData$WMComp)
+
+ggplot(AllData, aes(y = WMComp)) +
+  geom_boxplot()
+```
+
+Histogram: 
+Shapiro-Wilk: 
+QQ:
+boxplot:
+
+WM composite does not pass assumption checks. Skew towards higher scores (negative skew)
+
+```{r assumption checks for MCTMWRate}
+hist(AllData$MCTMWRate)
+shapiro.test(AllData$MCTMWRate)
+qqnorm(AllData$MCTMWRate)
+
+ggplot(AllData, aes(y = MCTMWRate)) +
+  geom_boxplot()
+```
+
+Histogram: 
+Shapiro-Wilk: 
+QQ:
+boxplot:
+
+MW rate is not normally distributed.
+
+
+```{r assumption checks for MCTAwareRate}
+hist(AllData$MCTAwareRate)
+shapiro.test(AllData$MCTAwareRate)
+qqnorm(AllData$MCTAwareRate)
+
+ggplot(AllData, aes(y = MCTAwareRate)) +
+  geom_boxplot()
+```
+
+Histogram: 
+Shapiro-Wilk: 
+QQ:
+boxplot:
+
+Aware rate not normally distributed
+
+```{r assumption checks for MCTIntentRate}
+hist(AllData$MCTIntentRate)
+shapiro.test(AllData$MCTIntentRate)
+qqnorm(AllData$MCTIntentRate)
+
+ggplot(AllData, aes(y = MCTIntentRate)) +
+  geom_boxplot()
+```
+
+Histogram: 
+Shapiro-Wilk: 
+QQ:
+boxplot:
+
+Intentional rate not normally distributed
+
+```{r mahalanobis distance all variables of interest}
+mahalanobis_distance(AllData[,c(30,31,34,186,187,191:194)])
+```
+
+```{r mahalanobis distance without questionnaire scales}
+mahalanobis_distance(AllData[,c(186,187,191:194)])
+```
+
+```{r mahalanobis distance EF measures}
+mahalanobis_distance(AllData[,c(186,187,191)])
+```
+One outlier SARTz = -0.223225573 , Switchz = 3.934119854	, WMComp = -1.145909522 ;
+same outlier is also in Switchz outliers.
+
+```{r mahalanobis distance MW measures}
+mahalanobis_distance(AllData[,c(192:194)])
+```
+
+check correlations between scales and tasks
+check correlations between EF z-scores
+For ASRS use ASRSTotal
+For BDEFS use TotalBDEFS
+For Mews use TotalMews
+```{r correlations}
+# attempting with correlation package
+# assuming column numbers are constant
+# running spearman since many variables rea not normally distributed.
+CorrelationChecks <- correlation(AllData[,c(30,31,34,186,187,191:194)],method = "spearman")
+CorrelationChecks
+```
+
+ASRS positively correlates with BDEFS, MEWS, and mind wandering rate
+BDEFS positively correlates with MEWS
+SARTz positively correlates with working memory composite
+MW rate negatively correlates with aware and intentional rates.
+Intentional and aware rates are positively correlated.
+
+Questionnaire scales do not correlate with EF measures, but correlate with each other.
+Some intercorrelation between EF measures.
+mind wandering rate only correlates with ASRS (and other mind wandering aspect rates)
+
+regression analyses with part and partial correlations
+MW ~ EF variables
+
+```{r mw rate and ef scores}
+MWEF <- lm(MCTMWRate ~ SARTz + Switchz + WMComp, AllData)
+summary(MWEF)
+plot_model(MWEF, type = "diag")
+```
+EF z scores and composite do not predict MW rate.
+
+Intentional ~ EF
+```{r intentional mw rate and ef scores}
+IntentEF <- lm(MCTIntentRate ~ SARTz + Switchz + WMComp, AllData)
+summary(IntentEF)
+plot_model(IntentEF, type = "diag")
+```
+EF z scores and composite do not predict intentional MW rate.
+
+Aware ~ EF
+```{r aware mw rate and ef scores}
+AwareEF <- lm(MCTAwareRate ~ SARTz + Switchz + WMComp, AllData)
+summary(AwareEF)
+plot_model(AwareEF, type = "diag")
+```
+EF z scores and composite do not predict aware MW rate.
+

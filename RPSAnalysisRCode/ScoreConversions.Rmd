@@ -1,0 +1,85 @@
+---
+title: "EFMW Study 1 Score Conversions"
+creation date: "August 10, 2023"
+last edited date: "January 12, 2024"
+author: "Chelsie H."
+output: html_notebook
+---
+
+```{r startup}
+versions <- devtools::session_info() #save R and R package versions.
+versions
+```
+
+```{r load data}
+directoryset = readline("Are you using the PC (1) or Laptop (2)?")
+
+if (directoryset == "1"){
+  setwd("C:/Users/chish/OneDrive - University of Calgary/1_PhD_Project/Scripting/RPSPreliminaryAnalysis")
+} else {
+  setwd("C:/Users/chels/OneDrive - University of Calgary/1_PhD_Project/Scripting/RPSPreliminaryAnalysis")
+}
+
+AllData <- read.csv("RPSCombinedData_January11_2024.csv")
+```
+
+z-score EF tasks
+SART score is d' (SARTdPrime)
+Switch score is reaction time cost (SwitchCostRT)
+Symmetry Span scores is partial score (SymSpanAccuracy)
+1-back score is d' (NBack1DPrime)
+2-back score is d' (NBack2DPrime)
+```{r calculate means and sds}
+SARTmean <- mean(AllData$SARTdPrime, na.rm = TRUE)
+SARTsd <- sd(AllData$SARTdPrime, na.rm = TRUE)
+
+Switchmean <- mean(AllData$SwitchCostRT, na.rm = TRUE)
+Switchsd <- sd(AllData$SwitchCostRT, na.rm = TRUE)
+
+SymSpanmean <- mean(AllData$SymSpanAccuracy, na.rm = TRUE)
+SymSpansd <- sd(AllData$SymSpanAccuracy, na.rm = TRUE)
+
+Nback1mean <- mean(AllData$NBack1DPrime, na.rm = TRUE)
+Nback1sd <- sd(AllData$NBack1DPrime, na.rm = TRUE)
+
+Nback2mean <- mean(AllData$NBack2DPrime, na.rm = TRUE)
+Nback2sd <- sd(AllData$NBack2DPrime, na.rm = TRUE)
+```
+
+z score = (score - mean)/sd
+```{r calculate z-scores}
+AllData$SARTz <- (AllData$SARTdPrime - SARTmean)/SARTsd
+AllData$Switchz <- (AllData$SwitchCostRT - Switchmean)/Switchsd
+AllData$SymSpanz <- (AllData$SymSpanAccuracy - SymSpanmean)/SymSpansd
+AllData$Nback1z <- (AllData$NBack1DPrime - Nback1mean)/Nback1sd
+AllData$Nback2z <- (AllData$NBack2DPrime - Nback2mean)/Nback2sd
+```
+
+Calculate Composites
+average symm span and n-backs
+```{r calculate composites}
+AllData$WMComp <- rowMeans(AllData[,c("SymSpanz","Nback1z","Nback2z")], na.rm = TRUE)
+```
+
+Convert MW scores to percentages
+Total probes is MCTProbes
+Mind wandering is MCTMW
+Aware is MCTAware
+Intentional is MCTIntentional
+
+```{r MW percentages}
+AllData$MCTMWRate <- AllData$MCTMW / AllData$MCTProbes
+
+AllData$MCTAwareRate <- AllData$MCTAware / AllData$MCTProbes
+
+AllData$MCTIntentRate <- AllData$MCTIntentional / AllData$MCTProbes
+```
+
+```{r save new data}
+todaysdate = readline("Please enter today's date to save scores. (MonDD_YYYY)")
+
+filename = paste("RPSCombinedDataConv_",todaysdate, ".csv", sep = "")
+
+write.csv(AllData,filename,row.names = FALSE)
+```
+
