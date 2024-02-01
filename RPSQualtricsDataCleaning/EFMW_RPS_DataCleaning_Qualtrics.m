@@ -184,7 +184,7 @@ for PIdx = 1:size(RawDataText)
     % Section 2 - Self-Organization/Problem Solving, columns 99 to 122
     QData.BDEFS_SelfOrganizationProblemSolving = sum(RawDataNum{PIdx,[99:122]},2,"omitnan");
     % Section 3 - Self-Restraint, columns 123 to 141
-    QData.BDEFS_SelfRestaint = sum(RawDataNum{PIdx,[123:141]},2,"omitnan");
+    QData.BDEFS_SelfRestraint = sum(RawDataNum{PIdx,[123:141]},2,"omitnan");
     % Section 4 - Self-Motivation, columns 142 to 153
     QData.BDEFS_SelfMotivation = sum(RawDataNum{PIdx,[142:153]},2,"omitnan");
     % Section 5 - Self-Regulation of Emotion, columns 154 to 166
